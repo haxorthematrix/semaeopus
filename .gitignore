@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Generated IQ captures from learners (commit only the reference baseline)
+captures/*.iq
+!captures/baseline.iq
+captures/*.bin
+captures/session.jsonl
+/tmp_*.jsonl

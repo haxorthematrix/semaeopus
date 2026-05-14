@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Semaeopus — a realistic CubeSat hacking platform</title>
+  <meta name="description" content="A FlatSat-style satellite + ground station you can build from breadboards and Pi Picos, with a software-only simulator. Learn satellite communication security by attacking your own spacecraft." />
+  <meta name="theme-color" content="#0a0e1a" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Semaeopus" />
+  <meta property="og:description" content="A realistic CubeSat hacking platform — flat-sat satellite, two ground stations, 12-step curriculum, plus a software-only simulator." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://semaeopus.net" />
+</head>
+<body>
+
+  <nav class="top">
+    <div class="wrap">
+      <a class="brand" href="/">
+        <svg viewBox="0 0 240 240" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="square">
+          <path d="M 215 95 A 55 55 0 0 0 160 40" />
+          <path d="M 235 95 A 75 75 0 0 0 160 20" />
+          <rect x="20" y="110" width="50" height="35" />
+          <rect x="80" y="95" width="80" height="80" />
+          <rect x="105" y="120" width="30" height="30" />
+          <rect x="170" y="110" width="50" height="35" />
+        </svg>
+        semaeopus
+      </a>
+      <div class="links">
+        <a href="#start">Start</a>
+        <a href="#curriculum">Lessons</a>
+        <a href="#safety">Safety</a>
+        <a href="https://github.com/haxorthematrix/semaeopus" target="_blank" rel="noopener">GitHub →</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <!-- Big logo -->
+      <svg class="logo" viewBox="0 0 240 240" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square" aria-label="Semaeopus logo">
+        <path d="M 195 95 A 35 35 0 0 0 160 60" />
+        <path d="M 215 95 A 55 55 0 0 0 160 40" />
+        <path d="M 235 95 A 75 75 0 0 0 160 20" />
+        <rect x="20"  y="110" width="50" height="35" />
+        <line x1="32" y1="110" x2="32" y2="145" />
+        <line x1="45" y1="110" x2="45" y2="145" />
+        <line x1="58" y1="110" x2="58" y2="145" />
+        <line x1="70" y1="127.5" x2="80" y2="127.5" />
+        <rect x="80" y="95" width="80" height="80" />
+        <rect x="105" y="120" width="30" height="30" />
+        <line x1="160" y1="127.5" x2="170" y2="127.5" />
+        <rect x="170" y="110" width="50" height="35" />
+        <line x1="182" y1="110" x2="182" y2="145" />
+        <line x1="195" y1="110" x2="195" y2="145" />
+        <line x1="208" y1="110" x2="208" y2="145" />
+        <line x1="80" y1="105" x2="160" y2="105" />
+        <line x1="80" y1="165" x2="160" y2="165" />
+      </svg>
+
+      <h1>sema<span class="accent">e</span>opus</h1>
+      <p class="tagline">
+        A realistic CubeSat hacking platform.
+        Build a FlatSat from breadboards and Pi Picos, or run it in a
+        software-only simulator on your laptop. Learn satellite
+        communications security by attacking your own spacecraft.
+      </p>
+
+      <a class="cta" href="#start">Try it now &nbsp;→</a>
+      <a class="cta secondary" href="https://github.com/haxorthematrix/semaeopus" target="_blank" rel="noopener">View on GitHub</a>
+
+      <div class="meta">
+        <span class="pill"><span class="dot"></span>v0 working in simulator</span>
+        <span class="pill">ISM 433 / 915 MHz</span>
+        <span class="pill">CCSDS-lite over 2-GFSK</span>
+        <span class="pill">12-step curriculum</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---- WHAT ---- -->
+  <section id="what">
+    <div class="wrap">
+      <h2><span class="lead">$</span>what is it</h2>
+      <p class="sub">
+        Semaeopus models the <strong>TT&amp;C link</strong> (telemetry,
+        tracking and command) of a real CubeSat closely enough that
+        lessons transfer to flight hardware — yet builds from
+        through-hole modules on a solderless breadboard. The on-air
+        protocol is a deliberately simplified version of
+        <a href="https://public.ccsds.org/Pubs/133x0b2.pdf" target="_blank" rel="noopener">CCSDS Space Packet</a>,
+        carried over 2-GFSK on the CC1101 — the same shape of stack
+        flown today.
+      </p>
+
+      <div class="features">
+        <div class="feature">
+          <h4>Two halves of the link</h4>
+          <p>Build both the satellite and the ground station. Then build a second ground station — the attacker — and watch the same protocol from the wrong end.</p>
+        </div>
+        <div class="feature">
+          <h4>Four security levels</h4>
+          <p>Ships at L0 (cleartext, no auth) so attacks are trivial. Bump <code>SECURITY_LEVEL</code> through L1 (HMAC), L2 (HMAC + counter), L3 (AES-CTR + HMAC) as the curriculum progresses.</p>
+        </div>
+        <div class="feature">
+          <h4>Hardware-free path</h4>
+          <p>A UDP-multicast "ether" runs the <em>same firmware</em> as the flight build. Plus a synthetic GFSK IQ recording for the SDR lessons. Start before parts arrive.</p>
+        </div>
+        <div class="feature">
+          <h4>Legal by default</h4>
+          <p>433.92 MHz EU ISM or 915 MHz US Part 15.247, with a 17 cm whip and 0 dBm. Reaches across the bench, not your neighbour.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- START ---- -->
+  <section id="start">
+    <div class="wrap">
+      <h2><span class="lead">$</span>try it now</h2>
+      <p class="sub">Three independent paths. Pick whichever matches the gear you already have.</p>
+
+      <div class="paths">
+
+        <div class="path-card">
+          <div class="badge">A · no hardware</div>
+          <h3>simulator</h3>
+          <p>Virtual satellite + virtual ground stations over UDP. Replay and inject work end-to-end.</p>
+<pre><code><span class="prompt">$</span> git clone https://github.com/haxorthematrix/semaeopus
+<span class="prompt">$</span> cd semaeopus
+<span class="prompt">$</span> pip install pyserial pytest
+<span class="prompt">$</span> python -m sim.virtual_satellite &amp;
+<span class="prompt">$</span> python -m groundstation.operator.gs --sim
+<span class="prompt">op&gt;</span> ping
+<span class="prompt">op&gt;</span> safe
+<span class="comment"># in another terminal — forge a FORCE_SAFE</span>
+<span class="prompt">$</span> python -m groundstation.attacker.inject \
+       --sim --apid 0xFF
+</code></pre>
+        </div>
+
+        <div class="path-card">
+          <div class="badge">B · no SDR</div>
+          <h3>synthetic RF</h3>
+          <p>A 2.7-second <code>.cu8</code> recording of a 2-GFSK Semaeopus session, ready for GNU Radio / inspectrum / gqrx.</p>
+<pre><code><span class="prompt">$</span> python -m tools.generate_iq
+<span class="comment"># writes captures/baseline.iq + .jsonl</span>
+<span class="prompt">$</span> gqrx                            <span class="comment"># File → I/Q file…</span>
+<span class="comment"># or follow lessons/L02_demod_gnuradio.md</span>
+<span class="comment">#</span>
+<span class="comment"># The JSONL oracle has the decoded</span>
+<span class="comment"># frames — compare against your demod.</span>
+</code></pre>
+        </div>
+
+        <div class="path-card">
+          <div class="badge">C · real hardware</div>
+          <h3>flat-sat build</h3>
+          <p>~ $35 of through-hole parts. No PCBs, no SMD soldering — breadboard + Dupont wires only.</p>
+<pre><code><span class="comment"># BOM: Pi Pico + CC1101 + BME280</span>
+<span class="comment">#      + MPU6050 + INA219 + DS3231</span>
+<span class="comment">#      + SSD1306 OLED</span>
+<span class="prompt">$</span> mpremote cp -r firmware/satellite/. :/
+<span class="prompt">$</span> mpremote cp -r protocol :/protocol
+<span class="prompt">$</span> python -m groundstation.operator.gs \
+       --port /dev/ttyACM1
+</code></pre>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- ARCHITECTURE ---- -->
+  <section id="arch">
+    <div class="wrap">
+      <h2><span class="lead">$</span>architecture</h2>
+      <p class="sub">Same protocol on every path. The simulator swaps the CC1101 PHY for a UDP socket; everything above that is bit-identical.</p>
+      <div class="arch">
+<pre>┌─────────────────┐                         ┌─────────────────────┐
+│ "SATELLITE"     │                         │ OPERATOR GROUND     │
+│ (FlatSat)       │   &lt;── 433/915 MHz ──&gt;   │ STATION             │
+│                 │       ISM downlink      │                     │
+│ Pi Pico + CC1101│       ISM uplink        │ Pi Pico + CC1101    │
+│ + housekeeping  │                         │  ↕ USB-serial       │
+│ sensors & disp  │                         │ Laptop: gs-operator │
+└─────────────────┘                         └─────────────────────┘
+         ▲
+         │                                  ┌─────────────────────┐
+         │                                  │ ATTACKER STATION    │
+         └──── eavesdrop / inject ─────────►│                     │
+                                            │ RTL-SDR v3 (RX)     │
+                                            │ + Pi Pico + CC1101  │
+                                            │   or HackRF (TX/RX) │
+                                            │ Laptop: gs-attacker │
+                                            │ + GNU Radio         │
+                                            └─────────────────────┘</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- CURRICULUM ---- -->
+  <section id="curriculum">
+    <div class="wrap">
+      <h2><span class="lead">$</span>curriculum</h2>
+      <p class="sub">A 12-step path from "see the signal" to "take over an authenticated link". Lessons L00–L06 are written; L07–L12 are outlined.</p>
+
+      <table class="curriculum">
+        <thead>
+          <tr><th>#</th><th>Title</th><th>Sim only?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="lesson-num">L00</td><td>Build &amp; first beacon</td><td class="tag-partial">partial</td></tr>
+          <tr><td class="lesson-num">L01</td><td>Spectrum survey</td><td class="tag-partial">use IQ</td></tr>
+          <tr><td class="lesson-num">L02</td><td>Demod in GNU Radio</td><td class="tag-partial">use IQ</td></tr>
+          <tr><td class="lesson-num">L03</td><td>Frame sync &amp; CRC</td><td class="tag-partial">use IQ</td></tr>
+          <tr><td class="lesson-num">L04</td><td>Telemetry decode</td><td class="tag-yes">yes</td></tr>
+          <tr><td class="lesson-num">L05</td><td>Replay attack</td><td class="tag-yes">yes</td></tr>
+          <tr><td class="lesson-num">L06</td><td>Command injection</td><td class="tag-yes">yes</td></tr>
+          <tr><td class="lesson-num">L07</td><td>HMAC bypass via replay (L1)</td><td class="tag-yes">yes</td></tr>
+          <tr><td class="lesson-num">L08</td><td>Counter-bound HMAC (L2)</td><td class="tag-yes">yes</td></tr>
+          <tr><td class="lesson-num">L09</td><td>Timing side-channel</td><td class="tag-partial">partial</td></tr>
+          <tr><td class="lesson-num">L10</td><td>Encryption + jam &amp; replay</td><td class="tag-partial">partial</td></tr>
+          <tr><td class="lesson-num">L11</td><td>Beacon spoofing</td><td class="tag-yes">yes</td></tr>
+          <tr><td class="lesson-num">L12</td><td>Capstone</td><td class="tag-yes">yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ---- SAFETY ---- -->
+  <section id="safety">
+    <div class="wrap">
+      <h2><span class="lead">$</span>safety &amp; ethics</h2>
+      <div class="callout">
+        <h3>// read before transmitting</h3>
+        <p>Defaults are 0 dBm on 433.920 MHz with a 17 cm whip — within EU/R1 ISM limits and an order of magnitude below US Part 15. Switch to 915 MHz for US compliance.</p>
+        <p>No external power amplifiers. No transmissions on amateur satellite frequencies (435–438 MHz UHF).</p>
+        <p>Practice attacks <strong>only on systems you own</strong>, or with explicit written permission. The point of Semaeopus is to make you better at defending real spacecraft — not to provide tooling for harming them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- FOOTER ---- -->
+  <footer>
+    <div class="wrap">
+      <div class="left">
+        <svg viewBox="0 0 240 240" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="square">
+          <rect x="80" y="95" width="80" height="80" />
+          <rect x="105" y="120" width="30" height="30" />
+        </svg>
+        <span>semaeopus &middot; MIT (code) &middot; CC-BY-SA 4.0 (lessons)</span>
+      </div>
+      <div class="right">
+        <a href="https://github.com/haxorthematrix/semaeopus" target="_blank" rel="noopener">github</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/haxorthematrix/semaeopus/blob/main/specification.md" target="_blank" rel="noopener">spec</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/haxorthematrix/semaeopus/issues" target="_blank" rel="noopener">issues</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"
+     fill="none" stroke="currentColor" stroke-width="6"
+     stroke-linecap="square" stroke-linejoin="miter"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Semaeopus</title>
+  <desc id="desc">CubeSat with solar panels and three concentric radio waves emanating from the upper-right corner.</desc>
+
+  <!-- Three concentric quarter-arcs (radio waves) emanating up-right -->
+  <path d="M 195 95 A 35 35 0 0 0 160 60" />
+  <path d="M 215 95 A 55 55 0 0 0 160 40" />
+  <path d="M 235 95 A 75 75 0 0 0 160 20" />
+
+  <!-- Left solar panel -->
+  <rect x="20"  y="110" width="50" height="35" />
+  <line x1="32"  y1="110" x2="32"  y2="145" />
+  <line x1="45"  y1="110" x2="45"  y2="145" />
+  <line x1="58"  y1="110" x2="58"  y2="145" />
+  <line x1="70"  y1="127.5" x2="80" y2="127.5" />   <!-- boom -->
+
+  <!-- Cube body -->
+  <rect x="80" y="95" width="80" height="80" />
+  <!-- Aperture / payload (small inner square) -->
+  <rect x="105" y="120" width="30" height="30" />
+
+  <!-- Right solar panel -->
+  <line x1="160" y1="127.5" x2="170" y2="127.5" />
+  <rect x="170" y="110" width="50" height="35" />
+  <line x1="182" y1="110" x2="182" y2="145" />
+  <line x1="195" y1="110" x2="195" y2="145" />
+  <line x1="208" y1="110" x2="208" y2="145" />
+
+  <!-- Mid-cube band (visual cue) -->
+  <line x1="80" y1="105" x2="160" y2="105" />
+  <line x1="80" y1="165" x2="160" y2="165" />
+</svg>
