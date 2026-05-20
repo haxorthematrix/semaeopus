@@ -177,7 +177,11 @@ def main():
     ap.add_argument("--sample-rate", type=int, default=1_000_000)
     ap.add_argument("--bit-rate", type=int, default=9600)
     ap.add_argument("--deviation", type=int, default=4800)
-    ap.add_argument("--bt", type=float, default=0.5)
+    ap.add_argument("--bt", type=float, default=1.0,
+                    help="GFSK BT product. 1.0 = wide Gaussian, minimal "
+                         "ISI, recoverable by a naive integrate-and-dump "
+                         "demod (the educational default). 0.5 = standard "
+                         "CC1101 spec, needs matched-filter receiver.")
     ap.add_argument("--gap-ms", type=int, default=200,
                     help="silence between consecutive frames")
     ap.add_argument("--seed", type=int, default=42)

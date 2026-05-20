@@ -46,7 +46,17 @@ def main():
     ap.add_argument("--freq", type=int, default=433_920_000)
     ap.add_argument("--sync", default="d391")
     ap.add_argument("--bitrate", type=int, default=9600)
+    ap.add_argument("--security", type=int, default=0, choices=[0, 1, 2, 3])
+    ap.add_argument("--key", default=None, help="16-byte hex (sec>=1)")
     args = ap.parse_args()
+
+    key = None
+    if args.security > 0:
+        if not args.key:
+            ap.error("--key is required when --security >= 1")
+        key = bytes.fromhex(args.key)
+        if len(key) != 16:
+            ap.error("--key must be 16 bytes hex")
 
     if not args.sim and not args.port:
         ap.error("--port is required unless --sim is given")
@@ -59,12 +69,16 @@ def main():
     deadline = time.time() + args.duration
     n = 0
     seq = 1
+    base_nonce = int(time.time() * 1000)
     while time.time() < deadline:
         apid = random.choice(TARGET_APIDS)
         length = random.choice([0, 1, 4, 8, 16, 32, 64, 128])
         body = bytes(random.randrange(256) for _ in range(length))
+        nonce = ((base_nonce + n) & ((1 << 64) - 1)).to_bytes(8, "big") if key else None
         try:
-            frame = sp.encode(sp.TYPE_TC, apid, seq, body)
+            frame = sp.encode(sp.TYPE_TC, apid, seq, body,
+                              security_level=args.security,
+                              key=key, nonce=nonce)
         except Exception as e:
             print("encode failed:", e)
             continue

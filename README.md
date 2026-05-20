@@ -66,10 +66,16 @@ Detailed BOMs and wiring diagrams in [`hardware/`](hardware/). Lesson
 python -m pytest tests/ -q
 ```
 
-35 tests cover the protocol codec (all four security levels, CRC
+37 tests cover the protocol codec (all four security levels, CRC
 detection, replay rules), the TC dispatcher, an end-to-end virtual-sat
 regression that proves an injected `FORCE_SAFE` flips the satellite
-into SAFE mode, and the GFSK modulator self-check.
+into SAFE mode, the GFSK modulator self-check, and the textual TUI
+import surface.
+
+For the hardware path, `bringup/` has seven standalone MicroPython
+smoke tests that verify each subsystem wires up correctly before you
+flash the full firmware. See
+[`hardware/bringup-checks.md`](hardware/bringup-checks.md).
 
 ## Layout
 

@@ -23,6 +23,24 @@ python -m tools.generate_iq                  # produces captures/baseline.iq
 The synthetic capture is 1 Msps, so set the sample rate in your
 flowgraph accordingly (1 Msps → sps = 1_000_000 / 9600 ≈ 104.17).
 
+> **BT note.** The synthetic capture uses `--bt 1.0` (wide Gaussian,
+> minimal ISI) by default so a beginner's integrate-and-dump
+> demodulator can recover it. Real CC1101 typically transmits at
+> BT=0.5 (sharper spectral occupancy, more ISI). To practice
+> matched-filter receiver design, regenerate with `python -m
+> tools.generate_iq --bt 0.5` and you'll need GNU Radio's
+> Symbol Sync (PFB MF) block to recover the bits.
+
+### 1c. Reference demodulator (sanity check before GNU Radio)
+```bash
+python -m tools.demod_iq                # reads captures/baseline.iq
+# expect: "recovered 11 CRC-OK frames" and "matched 11"
+```
+The pure-Python reference demod uses an energy detector + per-burst
+integrate-and-dump + Hamming-2-tolerant sync correlator. It works
+for BT=1.0 (the default) only. Use it as the ground truth your GNU
+Radio chain must reach.
+
 ### 2. Build the demod flowgraph
 See `groundstation/attacker/gnuradio/README.md` for the block list.
 Save as `gfsk_rx.grc`.

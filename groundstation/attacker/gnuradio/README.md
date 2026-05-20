@@ -5,6 +5,22 @@ a convenient way to *send* frames, but it abstracts away the
 modulation. To do lessons L01–L03 properly, learners should demodulate
 from raw IQ with an RTL-SDR or HackRF.
 
+> **Why recipes, not `.grc` files?** GNU Radio Companion's `.grc`
+> serialisation format changes between minor releases (3.10.x → 3.11.x
+> broke several block IDs). A working `.grc` for one user is often
+> broken for another. The Markdown recipes below pin block names and
+> parameter values that are stable across versions; copy them into
+> your local GRC.
+>
+> If you'd rather skip GRC entirely, `tools/demod_iq.py` is a pure-
+> Python reference that recovers all 11 frames from
+> `captures/baseline.iq` and prints them with CRC verdicts.
+
+| Recipe                                          | Direction | Tested with         |
+|-------------------------------------------------|-----------|---------------------|
+| [`gfsk_rx_recipe.md`](gfsk_rx_recipe.md)        | RX        | GR 3.10.4 + gr-osmosdr |
+| [`gfsk_tx_recipe.md`](gfsk_tx_recipe.md)        | TX (HackRF) | GR 3.10.4 + gr-osmosdr |
+
 ## `gfsk_rx.grc` (build outline)
 
 Block chain — assemble in `gnuradio-companion`:

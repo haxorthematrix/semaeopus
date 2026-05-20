@@ -249,7 +249,7 @@ def decode(frame, security_level=SEC_L0_NONE, key=None,
         else:
             mac_input = nonce + body_enc
         expected = hmac_sha256(key, mac_input)[:TAG_LEN]
-        auth_ok = _ct_eq(tag, expected)
+        auth_ok = _eq(tag, expected)
 
         if security_level == SEC_L3_AES_HMAC:
             user_data = _aes_ctr(key, nonce, body_enc)
@@ -273,15 +273,66 @@ def decode(frame, security_level=SEC_L0_NONE, key=None,
 
 
 def _ct_eq(a, b):
-    """Constant-time-ish comparison. *Intentionally* non-constant in L0/L1
-    so lesson L09 (timing side-channel) has a target. Used here for the
-    *secure* path only — security-level docs note the contrast."""
+    """Constant-time comparison — XOR-accumulate; no early exit, no
+    data-dependent branches."""
     if len(a) != len(b):
         return False
     acc = 0
     for x, y in zip(a, b):
         acc |= x ^ y
     return acc == 0
+
+
+# ---------------------------------------------------------------------------
+# Timing-side-channel lesson hook (L09)
+# ---------------------------------------------------------------------------
+#
+# Set LEAKY_HMAC_COMPARE = True (e.g. via env var SEMAEOPUS_LEAKY_HMAC=1) to
+# swap the constant-time tag comparison for a short-circuit byte-by-byte one
+# that includes a deliberate per-byte delay. This makes the side-channel
+# detectable in pure Python — a real RP2040 implementation in C would leak
+# at the nanosecond scale that's invisible over RF, but the *attack
+# technique* is the same.
+#
+# Lesson L09 walks through using tools/timing_oracle.py to drive byte-by-
+# byte tag recovery.
+
+import os as _os
+import time as _time
+
+LEAKY_HMAC_COMPARE = (_os.environ.get("SEMAEOPUS_LEAKY_HMAC", "0") == "1")
+LEAKY_BYTE_DELAY_US = 4000   # 4 ms per matching byte — well above localhost
+                             # TCP RTT noise (~0.5–2 ms typical on macOS)
+
+
+def _leaky_eq(a, b):
+    """Short-circuit compare with delay AFTER each successful match.
+    A mismatch at position k → k delays. A full 8/8 match → 8 delays.
+    Asymmetry between correct and wrong final-byte guesses is what makes
+    the side-channel attack work all the way to the last byte.
+    Demonstration only — DO NOT use in production code."""
+    if len(a) != len(b):
+        return False
+    n = 0
+    for x, y in zip(a, b):
+        if x != y:
+            return False
+        n += 1
+        _busy_sleep_us(LEAKY_BYTE_DELAY_US)
+    return n == len(a)
+
+
+def _busy_sleep_us(microseconds):
+    """A busy-loop delay that's resilient to time.sleep granularity on
+    macOS/Linux. Not used on flight hardware; only by the side-channel
+    lesson on the host."""
+    deadline = _time.perf_counter_ns() + microseconds * 1000
+    while _time.perf_counter_ns() < deadline:
+        pass
+
+
+def _eq(a, b):
+    return _leaky_eq(a, b) if LEAKY_HMAC_COMPARE else _ct_eq(a, b)
 
 
 # ---------------------------------------------------------------------------

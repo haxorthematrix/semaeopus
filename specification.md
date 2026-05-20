@@ -405,33 +405,34 @@ semaeopus/
 
 ## 11. Status
 
-As of 2026-05-13:
+As of 2026-05-20:
 
 ### Done
-| Area                                | Notes                                                       |
-|-------------------------------------|-------------------------------------------------------------|
-| Design spec (this doc)              | Full RF, protocol, curriculum, threat model                 |
-| Hardware BOMs + wiring              | Satellite, operator GS, attacker GS                         |
-| Shared CCSDS-lite codec             | L0/L1/L2/L3; 23 codec tests pass                            |
-| Satellite firmware (MicroPython)    | Scheduler, OBC modules, CC1101 driver, sensor drivers       |
-| GS front-end firmware               | USB-CDC modem for operator & attacker Picos                 |
-| Operator GS app + attacker tooling  | gs, capture, replay, inject, fuzz — all `--sim` capable     |
-| **Software-only simulator**         | Virtual sat + UDP "ether"; reuses real OBC modules unchanged|
-| **GFSK IQ generator**               | `captures/baseline.iq` for hardware-free L01–L04            |
-| **pytest suite**                    | 35 tests: codec, handlers, end-to-end sim, IQ self-check    |
-| Lessons L00–L06                     | Build, spectrum, demod, frame-sync, telemetry, replay, inject |
-
-### In progress
-- L07–L12 full write-ups (outline exists).
+| Area                                  | Notes                                                       |
+|---------------------------------------|-------------------------------------------------------------|
+| Design spec (this doc)                | Full RF, protocol, curriculum, threat model                 |
+| Hardware BOMs + wiring                | Satellite, operator GS, attacker GS                         |
+| **Hardware bring-up cookbook**        | OS install, 7-stage check sequence, troubleshooting tree    |
+| **Bring-up scripts**                  | 7 standalone MicroPython smoke tests, each prints PASS/FAIL |
+| Shared CCSDS-lite codec               | L0/L1/L2/L3 + leaky-compare hook for L09; 24 codec tests    |
+| Satellite firmware (MicroPython)      | Scheduler, OBC modules, CC1101 driver, sensor drivers       |
+| GS front-end firmware                 | USB-CDC modem for operator & attacker Picos                 |
+| Operator GS app + **textual TUI**     | gs, tui, capture, replay, inject, jam, fuzz, spoof-beacon   |
+| Attacker tooling — full security      | All tools accept `--security` + `--key` for L1/L2/L3        |
+| Software-only simulator               | Virtual sat + UDP "ether"; reuses real OBC modules unchanged|
+| GFSK IQ generator + reference demod   | `captures/baseline.iq` + `tools/demod_iq.py` recovers 11/11 |
+| **Timing side-channel toolkit**       | `tools/timing_oracle.py` + `tools/timing_attack.py` (works) |
+| **All 13 lessons L00–L12**            | Build through capstone; every sim-only lesson runnable today|
+| **GNU Radio recipes**                 | RX + TX block-by-block guides for GR 3.10                   |
+| pytest suite                          | 37 tests: codec, handlers, end-to-end sim, IQ, TUI smoke    |
 
 ### Next
 - Bring up the actual hardware once parts arrive; tune CC1101 register
   set from bench measurements (current values are SmartRF-Studio
   defaults, expect minor tweaks).
-- `textual`-based operator TUI to replace the plain-print log.
-- Real GNU Radio `.grc` files (currently we ship the flowgraph as a
-  block-list design doc).
 - `tools/deploy.sh` wrapping the `mpremote` upload sequence.
+- Validate the GNU Radio recipes end-to-end against a real RTL-SDR
+  pointed at a flat-sat.
 
 ### Future
 - Simulated **GPS receiver** (NMEA over UART driven by a trajectory
