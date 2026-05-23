@@ -32,6 +32,8 @@
       </a>
       <div class="links">
         <a href="#start">Start</a>
+        <a href="#bom">BOM</a>
+        <a href="#deps">Deps</a>
         <a href="#curriculum">Lessons</a>
         <a href="#safety">Safety</a>
         <a href="https://github.com/haxorthematrix/semaeopus" target="_blank" rel="noopener">GitHub →</a>
@@ -72,12 +74,14 @@
 
       <a class="cta" href="#start">Try it now &nbsp;→</a>
       <a class="cta secondary" href="https://github.com/haxorthematrix/semaeopus" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="cta secondary" href="https://github.com/haxorthematrix/semaeopus/blob/main/README.md" target="_blank" rel="noopener">README</a>
 
       <div class="meta">
-        <span class="pill"><span class="dot"></span>v0 working in simulator</span>
+        <span class="pill"><span class="dot"></span>v0.2 · L00–L12 runnable</span>
         <span class="pill">ISM 433 / 915 MHz</span>
         <span class="pill">CCSDS-lite over 2-GFSK</span>
-        <span class="pill">12-step curriculum</span>
+        <span class="pill">37 tests passing</span>
+        <span class="pill">~ $35 BOM</span>
       </div>
     </div>
   </header>
@@ -160,17 +164,109 @@
         <div class="path-card">
           <div class="badge">C · real hardware</div>
           <h3>flat-sat build</h3>
-          <p>~ $35 of through-hole parts. No PCBs, no SMD soldering — breadboard + Dupont wires only.</p>
+          <p>~ $35 of through-hole parts. No PCBs, no SMD soldering — breadboard + Dupont wires only. Seven bring-up scripts verify each subsystem before you flash the full firmware.</p>
 <pre><code><span class="comment"># BOM: Pi Pico + CC1101 + BME280</span>
 <span class="comment">#      + MPU6050 + INA219 + DS3231</span>
-<span class="comment">#      + SSD1306 OLED</span>
+<span class="comment">#      + SSD1306 OLED + breadboard</span>
+<span class="prompt">$</span> mpremote connect /dev/ttyACM0 \
+       run bringup/02_i2c_scan.py
 <span class="prompt">$</span> mpremote cp -r firmware/satellite/. :/
-<span class="prompt">$</span> mpremote cp -r protocol :/protocol
 <span class="prompt">$</span> python -m groundstation.operator.gs \
        --port /dev/ttyACM1
 </code></pre>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- BOM ---- -->
+  <section id="bom">
+    <div class="wrap">
+      <h2><span class="lead">$</span>bill of materials</h2>
+      <p class="sub">Three sub-builds. All through-hole or pre-soldered breakouts — no PCB fab, no SMD soldering. Detailed substitutions in <a href="https://github.com/haxorthematrix/semaeopus/tree/main/hardware">hardware/</a>.</p>
+
+      <div class="paths">
+
+        <div class="path-card">
+          <div class="badge">satellite · ~$35</div>
+          <h3>flat-sat</h3>
+          <ul class="bullets">
+            <li>Raspberry Pi Pico (or Pico W / 2 / 2 W)</li>
+            <li>CC1101 433/915 MHz module (E07-M1101D)</li>
+            <li>SSD1306 0.96″ I²C OLED</li>
+            <li>BME280 — temp / pressure / humidity</li>
+            <li>MPU6050 — IMU (ADCS analogue)</li>
+            <li>INA219 — power telemetry</li>
+            <li>DS3231 RTC + CR2032</li>
+            <li>2× LEDs, 2× 220 Ω resistors</li>
+            <li>Half-size breadboard + Dupont kit</li>
+            <li>17 cm ¼-wave whip wire</li>
+          </ul>
+        </div>
+
+        <div class="path-card">
+          <div class="badge">operator GS · ~$20</div>
+          <h3>ground station</h3>
+          <ul class="bullets">
+            <li>Raspberry Pi Pico</li>
+            <li>CC1101 module (match satellite band)</li>
+            <li>SSD1306 OLED — link status</li>
+            <li>Half-size breadboard + Dupont</li>
+            <li>17 cm ¼-wave whip wire</li>
+            <li>USB cable → laptop</li>
+          </ul>
+        </div>
+
+        <div class="path-card">
+          <div class="badge">attacker · $45 / $360</div>
+          <h3>two tiers</h3>
+          <p>Tier 1 (~ $45) — sufficient for L00–L09:</p>
+          <ul class="bullets">
+            <li>RTL-SDR v3 + telescopic antenna</li>
+            <li>Pi Pico + CC1101 for active TX</li>
+          </ul>
+          <p>Tier 2 (~ $360 total) — unlocks L10 jamming + GPS spoofing:</p>
+          <ul class="bullets">
+            <li>+ HackRF One + ANT500</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- DEPENDENCIES ---- -->
+  <section id="deps">
+    <div class="wrap">
+      <h2><span class="lead">$</span>dependencies</h2>
+      <p class="sub">Python 3.11+ is the only hard requirement. Everything else is by path.</p>
+
+      <div class="features">
+        <div class="feature">
+          <h4>Required (any path)</h4>
+          <p><code>pyserial</code>, <code>pytest</code>. <code>pip install pyserial pytest</code>.</p>
+        </div>
+        <div class="feature">
+          <h4>TUI dashboard (optional)</h4>
+          <p><code>textual</code>, <code>rich</code>. Adds the live operator UI with link status + telemetry panes.</p>
+        </div>
+        <div class="feature">
+          <h4>SDR / GNU Radio path</h4>
+          <p><code>gnuradio</code> ≥ 3.10, <code>gr-satellites</code>, <code>rtl-sdr</code>, optionally <code>hackrf</code>, <code>gqrx</code>, <code>inspectrum</code>.</p>
+        </div>
+        <div class="feature">
+          <h4>Security level 3</h4>
+          <p><code>pycryptodome</code> for AES-128-CTR on the host (MicroPython has it built in).</p>
+        </div>
+        <div class="feature">
+          <h4>Hardware path</h4>
+          <p><code>mpremote</code> to push code to the Pi Pico, plus a MicroPython UF2 (1.22+).</p>
+        </div>
+        <div class="feature">
+          <h4>Tested on</h4>
+          <p>macOS 14+, Ubuntu 22.04+. Windows works via WSL2 for the GNU Radio path; native PowerShell for everything else.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -223,7 +319,7 @@
           <tr><td class="lesson-num">L06</td><td>Command injection</td><td class="tag-yes">yes</td></tr>
           <tr><td class="lesson-num">L07</td><td>HMAC bypass via replay (L1)</td><td class="tag-yes">yes</td></tr>
           <tr><td class="lesson-num">L08</td><td>Counter-bound HMAC (L2)</td><td class="tag-yes">yes</td></tr>
-          <tr><td class="lesson-num">L09</td><td>Timing side-channel</td><td class="tag-partial">partial</td></tr>
+          <tr><td class="lesson-num">L09</td><td>Timing side-channel — recovers full HMAC tag</td><td class="tag-yes">yes</td></tr>
           <tr><td class="lesson-num">L10</td><td>Encryption + jam &amp; replay</td><td class="tag-partial">partial</td></tr>
           <tr><td class="lesson-num">L11</td><td>Beacon spoofing</td><td class="tag-yes">yes</td></tr>
           <tr><td class="lesson-num">L12</td><td>Capstone</td><td class="tag-yes">yes</td></tr>
