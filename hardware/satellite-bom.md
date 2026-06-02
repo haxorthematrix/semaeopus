@@ -7,6 +7,11 @@ Prices are USD, rough, late-2025 retail (Amazon / AliExpress / Adafruit
 / Pimoroni). Substitutions in the "Alt" column are functionally
 equivalent for Semaeopus purposes.
 
+> **Specific Amazon links?** See
+> [`amazon-bom.md`](amazon-bom.md) — date-stamped product candidates
+> with search URLs, key specs to match, and substitution notes for
+> when a specific listing goes stale.
+
 | #  | Part                                       | Role                                | Qty | Approx $ | Notes / Alt                                              |
 |----|--------------------------------------------|-------------------------------------|-----|---------:|----------------------------------------------------------|
 | 1  | Raspberry Pi Pico (or Pico 2 / Pico W)     | OBC + radio controller              | 1   | 4–6      | Pico W gives a "wifi side-channel" lesson later          |

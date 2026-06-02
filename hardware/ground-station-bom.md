@@ -4,6 +4,11 @@ Semaeopus uses **two** ground stations: the "operator" (who legitimately
 flies the satellite) and the "attacker" (who interferes with the link).
 Both can run from the same laptop, with separate USB devices.
 
+> **Specific Amazon links?** See
+> [`amazon-bom.md`](amazon-bom.md) — date-stamped product candidates
+> for every item below, with stable search URLs and substitution
+> guidance.
+
 ---
 
 ## Operator Ground Station (~ $20)

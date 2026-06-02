@@ -169,6 +169,12 @@ Full design details in [`specification.md`](specification.md).
 All parts are through-hole or pre-soldered on 0.1″ breakouts. No PCBs,
 no SMD soldering. Prices are USD, late 2025 retail.
 
+> **Specific Amazon links?** See
+> [`hardware/amazon-bom.md`](hardware/amazon-bom.md) — date-stamped
+> product candidates for every line item below, with stable search
+> URLs, key specs to match, and substitution guidance for when an
+> ASIN goes stale.
+
 ### Satellite (FlatSat) — ~ $35
 
 | #  | Part                                       | Role                                | Qty | Approx $ |
@@ -224,6 +230,8 @@ power limits and will get you into trouble.
 Detailed substitution notes in
 [`hardware/satellite-bom.md`](hardware/satellite-bom.md) and
 [`hardware/ground-station-bom.md`](hardware/ground-station-bom.md).
+**Specific Amazon links** in
+[`hardware/amazon-bom.md`](hardware/amazon-bom.md).
 
 ---
 
