@@ -1,5 +1,5 @@
 """
-Minimal CC1101 driver for MicroPython on RP2040.
+Minimal CC1101 driver for MicroPython (RP2040 Pico and ESP32 CYD).
 
 Implements the subset Semaeopus needs:
   - reset, configure for 2-GFSK 9600 bps
@@ -68,6 +68,12 @@ PKTSTATUS = 0x38
 RXBYTES   = 0x3B
 MARCSTATE = 0x35
 
+# MARCSTATE values used by packet_available()
+MARC_IDLE            = 0x01
+MARC_RX              = 0x0D
+MARC_RX_RST          = 0x0F
+MARC_RXFIFO_OVERFLOW = 0x11
+
 XTAL_HZ = 26_000_000
 
 
@@ -77,6 +83,8 @@ class CC1101:
         self.cs = Pin(cs_pin, Pin.OUT, value=1)
         self.gdo0 = Pin(gdo0_pin, Pin.IN) if gdo0_pin is not None else None
         self._buf = bytearray(1)
+        self._freq_hz = 915_000_000
+        self._held = None          # complete packet kept aside by transmit()
 
     # ---- low-level helpers -------------------------------------------------
 
@@ -164,6 +172,7 @@ class CC1101:
         self.set_tx_power(tx_power_dbm)
 
     def set_frequency(self, freq_hz):
+        self._freq_hz = freq_hz
         freq_word = int((freq_hz << 16) / XTAL_HZ)
         self._write_reg(FREQ2, (freq_word >> 16) & 0xFF)
         self._write_reg(FREQ1, (freq_word >>  8) & 0xFF)
@@ -174,20 +183,60 @@ class CC1101:
         self._write_reg(SYNC0,  sync16       & 0xFF)
 
     def set_tx_power(self, dbm):
-        # CC1101 PATABLE entries for 433 MHz, single-byte mode.
-        table = { -30: 0x12, -20: 0x0E, -15: 0x1D, -10: 0x34,
-                    0: 0x60,  +5: 0x84, +7: 0xC8, +10: 0xC0 }
-        # Pick closest <= requested.
-        chosen = 0x60
-        for k in sorted(table.keys()):
+        # PATABLE values from TI DN013, single-byte mode. The right byte
+        # depends on the band, so call set_frequency() first.
+        if self._freq_hz >= 800_000_000:
+            table = { -30: 0x03, -20: 0x0E, -15: 0x1E, -10: 0x27,
+                        0: 0x8E,  +5: 0x84, +7: 0xCC, +10: 0xC3 }   # 915 MHz
+        else:
+            table = { -30: 0x12, -20: 0x0E, -15: 0x1D, -10: 0x34,
+                        0: 0x60,  +5: 0x84, +7: 0xC8, +10: 0xC0 }   # 433 MHz
+        # Pick closest <= requested (lowest entry if below the table).
+        keys = sorted(table.keys())
+        chosen = table[keys[0]]
+        for k in keys:
             if k <= dbm:
                 chosen = table[k]
         self._write_reg(PATABLE, chosen)
 
+    def set_rx_bandwidth(self, bw_hz):
+        """Set the receive channel filter to the nearest supported width
+        (58 kHz to 812 kHz). Returns the actual bandwidth in Hz.
+
+        BW = XTAL / (8 * (4 + CHANBW_M) * 2**CHANBW_E). A narrow filter
+        lets the attacker modem hear a signal right beside a jammer
+        (lesson L10). Call from IDLE; listen() afterwards re-enters RX."""
+        best = None
+        for e in range(4):
+            for m in range(4):
+                bw = XTAL_HZ // (8 * (4 + m) * (1 << e))
+                if best is None or abs(bw - bw_hz) < abs(best[0] - bw_hz):
+                    best = (bw, e, m)
+        bw, e, m = best
+        cur = self._read_reg(MDMCFG4)
+        self._write_reg(MDMCFG4, (e << 6) | (m << 4) | (cur & 0x0F))
+        return bw
+
+    def idle(self):
+        self._strobe(SIDLE)
+
     # ---- packet I/O --------------------------------------------------------
 
     def transmit(self, payload):
-        """Variable-length packet: payload[0] must be the length byte."""
+        """Variable-length packet: payload[0] must be the length byte.
+
+        The radio is half duplex and SIDLE aborts a reception, so first let
+        a packet that is already arriving finish (GDO0 is high from its
+        sync word to its end), and keep any complete packet for the next
+        read_packet() instead of losing it."""
+        if self.gdo0:
+            t0 = time.ticks_ms()
+            while self.gdo0.value() == 1 and time.ticks_diff(time.ticks_ms(), t0) < 150:
+                pass
+        if self._held is None and self.packet_available():
+            got = self.read_packet()
+            if got[0] is not None:
+                self._held = got
         self._strobe(SIDLE)
         self._strobe(SFTX)
         self._write_burst(TXFIFO, payload)
@@ -211,25 +260,59 @@ class CC1101:
         self._strobe(SFRX)
         self._strobe(SRX)
 
+    def _rx_bytes(self):
+        """RXBYTES, read until two reads agree (CC1101 errata: SPI reads of
+        status registers can be corrupted while the value is changing)."""
+        a = self._read_status(RXBYTES)
+        while True:
+            b = self._read_status(RXBYTES)
+            if a == b:
+                return a & 0x7F, bool(a & 0x80)
+            a = b
+
     def packet_available(self):
-        """True if a complete packet sits in the RX FIFO."""
-        # GDO0 goes low at end-of-packet — easier: poll RXBYTES.
-        n = self._read_status(RXBYTES) & 0x7F
-        return n > 0
+        """True once a COMPLETE packet is waiting in the RX FIFO.
+
+        configure_default() sets MCSM1 RXOFF_MODE = IDLE, so the chip
+        leaves RX for IDLE the moment a packet ends. While it is still in
+        RX, bytes in the FIFO belong to a packet that is still arriving
+        (a 30-byte frame takes about 30 ms at 9.6 kBaud), so we wait.
+        Whenever the chip is idle with nothing to read, or the FIFO
+        overflowed, we put it back into RX here."""
+        if self._held is not None:
+            return True
+        state = self._read_status(MARCSTATE) & 0x1F
+        if MARC_RX <= state <= MARC_RX_RST:
+            return False                    # listening, or mid-packet
+        n, overflow = self._rx_bytes()
+        if overflow or state == MARC_RXFIFO_OVERFLOW:
+            self.listen()
+            return False
+        if state == MARC_IDLE:
+            if n > 0:
+                return True
+            self.listen()                   # e.g. after a CRC-failed packet was discarded
+        return False
 
     def read_packet(self):
-        """Return (payload, rssi_dbm, lqi) for the next FIFO packet, or
-        (None, None, None) if nothing is available."""
-        n = self._read_status(RXBYTES) & 0x7F
-        if n == 0:
-            return None, None, None
-        length_byte = self._read_reg(RXFIFO)
-        if length_byte == 0 or length_byte > 64:
-            self._strobe(SFRX)
-            return None, None, None
-        data = self._read_burst(RXFIFO, length_byte)
-        # Two appended status bytes: RSSI, LQI|CRC_OK
-        status = self._read_burst(RXFIFO, 2)
+        """Return (payload, rssi_dbm, lqi) for the waiting packet, or
+        (None, None, None) if there is none or it failed the CRC.
+        Always leaves the radio listening again."""
+        if self._held is not None:
+            got, self._held = self._held, None
+            return got
+        try:
+            n, _ = self._rx_bytes()
+            if n == 0:
+                return None, None, None
+            length_byte = self._read_reg(RXFIFO)
+            if length_byte == 0 or length_byte + 2 > n - 1:
+                return None, None, None     # incomplete or corrupt: drop it
+            data = self._read_burst(RXFIFO, length_byte)
+            # Two appended status bytes: RSSI, LQI|CRC_OK
+            status = self._read_burst(RXFIFO, 2)
+        finally:
+            self.listen()                   # flush leftovers, back to RX
         raw_rssi = status[0]
         if raw_rssi >= 128:
             rssi_dbm = (raw_rssi - 256) // 2 - 74
@@ -245,8 +328,9 @@ class CC1101:
 
 def make_default(config):
     """Wire SPI + return a configured CC1101 ready to listen()."""
-    spi = SPI(0,
-              baudrate=5_000_000,
+    # Pico: SPI(0). ESP32 CYD: SPI(2) (VSPI); the ESP32 has no SPI(0).
+    spi = SPI(getattr(config, "CC1101_SPI_ID", 0),
+              baudrate=getattr(config, "SPI_BAUD", 5_000_000),
               polarity=0, phase=0,
               sck=Pin(config.PIN_SPI_SCK),
               mosi=Pin(config.PIN_SPI_MOSI),
