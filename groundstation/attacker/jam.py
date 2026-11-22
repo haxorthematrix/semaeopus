@@ -55,7 +55,8 @@ def main():
     ap.add_argument("--replay-frame", help="hex frame for --mode replay-spam")
     ap.add_argument("--rate", type=float, default=50.0, help="frames / second")
     ap.add_argument("--duration", type=float, default=15.0)
-    ap.add_argument("--freq", type=int, default=433_920_000)
+    ap.add_argument("--freq", type=int, default=915_000_000,
+                    help="Hz; 915000000 (US, default) or 433920000 (EU)")
     ap.add_argument("--sync", default="d391")
     ap.add_argument("--bitrate", type=int, default=9600)
     args = ap.parse_args()

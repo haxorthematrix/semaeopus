@@ -23,7 +23,7 @@ you won't see "SEMAEOPUS-1 M0 …".
 
 ## You'll need
 - `pip install pycryptodome` on the host (CPython needs it; MicroPython
-  uses the built-in `ucryptolib`).
+  builds AES-CTR from the built-in `cryptolib`).
 - The L00 build at `SECURITY_LEVEL = 3`.
 
 ## Setup

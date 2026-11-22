@@ -44,7 +44,8 @@ def main():
     ap.add_argument("--duration", type=float, default=60.0)
     ap.add_argument("--tx-power", type=int, default=13,
                     help="sim tx_power_dbm (higher = louder RSSI than real sat)")
-    ap.add_argument("--freq", type=int, default=433_920_000)
+    ap.add_argument("--freq", type=int, default=915_000_000,
+                    help="Hz; 915000000 (US, default) or 433920000 (EU)")
     ap.add_argument("--sync", default="d391")
     ap.add_argument("--bitrate", type=int, default=9600)
     args = ap.parse_args()

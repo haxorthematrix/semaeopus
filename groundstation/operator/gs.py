@@ -7,7 +7,7 @@ and offers an interactive command prompt for the operator. Built on
 
 Usage:
     python -m groundstation.operator.gs --port /dev/ttyACM0 \
-        [--freq 433920000] [--security 0] [--key <16-byte-hex>]
+        [--freq 915000000] [--security 0] [--key <16-byte-hex>]
 
 Commands at the prompt:
     ping                              → APID_PING
@@ -135,7 +135,8 @@ def main():
                     help="use the UDP simulator instead of a serial Pico front-end")
     ap.add_argument("--node-id", default="OPGS",
                     help="virtual node id when --sim (4 chars max)")
-    ap.add_argument("--freq", type=int, default=433_920_000)
+    ap.add_argument("--freq", type=int, default=915_000_000,
+                    help="Hz; 915000000 (US, default) or 433920000 (EU)")
     ap.add_argument("--sync", default="d391")
     ap.add_argument("--bitrate", type=int, default=9600)
     ap.add_argument("--security", type=int, default=0, choices=[0, 1, 2, 3])

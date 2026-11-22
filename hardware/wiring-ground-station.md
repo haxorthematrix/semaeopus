@@ -15,11 +15,14 @@ Identical to satellite SPI/CC1101 wiring:
 | CSN    | GP13           |
 | SCK    | GP18           |
 | MOSI   | GP19           |
-| MISO   | GP12           |
+| MISO   | GP16 (pin 21)  |
 | GDO0   | GP10           |
 | GDO2   | (unused)       |
 
-Antenna: same 170 mm wire (433 MHz) / 82 mm (915 MHz).
+Antenna: 82 mm wire for 915 MHz (default) / 170 mm for 433 MHz.
+
+> The CYD build replaces this Pico ground station with a CYD; see
+> [`cyd-build.md`](cyd-build.md). The attacker modem still uses this wiring.
 
 ## OLED (status)
 

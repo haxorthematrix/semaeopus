@@ -16,15 +16,15 @@ different MCU.
    SDA0 ◀── GP4   │ 6               36│ 3V3 OUT  ──▶ to all 3V3 rails
    SCL0 ◀── GP5   │ 7               35│ ADC_VREF
               GND │ 8               33│ GND
-   MISO ◀── GP12  │16               25│ GP19  ─▶ MOSI    (CC1101 SI)
+              GP12│16               25│ GP19  ─▶ MOSI    (CC1101 SI)
    CSn  ◀── GP13  │17               24│ GP18  ─▶ SCK     (CC1101 SCK)
-              GP14│19               22│ GP17  ─▶ TX-LED
-              GP15│20               21│ GP16  ─▶ RX-LED
+ RX-LED ◀── GP14  │19               22│ GP17  ─▶ TX-LED
+              GP15│20               21│ GP16  ◀─ MISO    (CC1101 SO)
    GDO0  ◀── GP10 │14               26│ GP20  ─▶ SDA1   (DS3231)
                                     27│ GP21  ─▶ SCL1   (DS3231)
                   └───────────────────┘
 
-   SPI0:    SCK=GP18  MOSI=GP19  MISO=GP16↦GP12  CS=GP13  (we use GP12 for MISO via SPI0 RX)
+   SPI0:    SCK=GP18  MOSI=GP19  MISO=GP16  CS=GP13  (GP12 is not an SPI0 pin)
    I²C0:    SDA=GP4   SCL=GP5     ← SSD1306, BME280, MPU6050, INA219
    I²C1:    SDA=GP20  SCL=GP21    ← DS3231 (separate bus avoids 0x68 collision)
    CC1101:  GDO0=GP10 (RX'd-packet interrupt)
@@ -56,7 +56,7 @@ Connections to Pi Pico:
 | CSN    | GP13           | SPI chip-select, active-low            |
 | SCK    | GP18           | SPI clock                              |
 | MOSI   | GP19           | SPI MOSI                               |
-| MISO   | GP12           | SPI MISO                               |
+| MISO   | GP16 (pin 21)  | SPI0 MISO                              |
 | GDO0   | GP10           | Packet-end interrupt input             |
 | GDO2   | (unused)       | Leave floating                         |
 
@@ -85,7 +85,7 @@ see flaky reads, add 4.7 kΩ pull-ups from SDA and SCL to 3V3.
 
 ```
    3V3 OUT ──┬── 220 Ω ──[RED LED  TX]── GP17  (sinks: GP17 LOW = ON)
-             └── 220 Ω ──[GRN LED  RX]── GP16
+             └── 220 Ω ──[GRN LED  RX]── GP14
 ```
 
 (Equally valid: GPIO → resistor → LED anode → cathode → GND, with
@@ -117,11 +117,11 @@ than enough for everything on the BOM (CC1101 peaks ~35 mA in TX, OLED
    │        │── CSN ─── GP13 ──────────────│17│                          │ 3│ GND
    │        │── SCK ─── GP18 ──────────────│24│                          │ 4│ GP2
    │        │── MOSI ── GP19 ──────────────│25│                          │ 5│ GP3
-   │        │── MISO ── GP12 ──────────────│16│                          │ 6│ GP4 ─── SDA0 ─── bus
+   │        │── MISO ── GP16 ──────────────│21│                          │ 6│ GP4 ─── SDA0 ─── bus
    │        │── GDO0 ── GP10 ──────────────│14│                          │ 7│ GP5 ─── SCL0 ─── bus
    │   ANT  │── (whip 170 mm)              │  │                          │ 8│ GND
    └────────┘                              │  │                          │  │
-                                           │  │                          │21│ GP16 ── (220Ω) ── RX LED ── GND
+                                           │  │                          │19│ GP14 ── (220Ω) ── RX LED ── GND
                                            │  │                          │22│ GP17 ── (220Ω) ── TX LED ── GND
    ┌──────────┐                            │  │                          │26│ GP20 ─── SDA1
    │ SSD1306  │── VCC ─── 3V3              │  │                          │27│ GP21 ─── SCL1

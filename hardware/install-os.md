@@ -3,6 +3,10 @@
 This is the one-time setup. Do it once per Pico (you have at least
 two: one for the satellite, one for the ground-station front-end).
 
+> Building with Cheap Yellow Display boards? Their ESP32 flashing steps
+> are in [`cyd-build.md`](cyd-build.md); this page still covers the
+> attacker Pico.
+
 ## 1. Install MicroPython on each Pi Pico
 
 Identify which Pico you have:
