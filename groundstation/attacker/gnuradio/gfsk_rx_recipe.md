@@ -1,136 +1,198 @@
-# GFSK RX recipe — GNU Radio Companion
+# GFSK RX recipe: GNU Radio Companion
 
-A from-scratch flowgraph that reproduces what `tools/demod_iq.py` does
-in 80 lines of Python, but with proper symbol-timing recovery so it
-will work on BT=0.5 signals from a real CC1101.
+A from-scratch flowgraph that receives the satellite at 915 MHz (or
+reads a recorded IQ file) and prints every frame with its CRC verdicts.
+It does what `tools/demod_iq.py` does, but with proper symbol-timing
+recovery, so it works on the BT = 0.5 signal from a real CC1101.
+
+Every block and value below is exercised by
+`tests/gnuradio/test_recipes.py`.
 
 ## Inputs
 
-- `captures/baseline.cfile` — convert from `.cu8` first:
+One of:
+
+- **Live:** an RTL-SDR or HackRF near the satellite.
+- **Recording:** capture 10 s with an RTL-SDR, then convert to GNU
+  Radio's complex float format:
+  ```bash
+  rtl_sdr -f 914800000 -s 2000000 -g 20 -n 20000000 captures/live.cu8
+  python -m tools.cu8_to_cfile captures/live.cu8 captures/live.cfile
+  ```
+- **No hardware:** the synthetic capture (see
+  [Synthetic capture settings](#synthetic-capture-settings)):
   ```bash
   python -m tools.cu8_to_cfile captures/baseline.iq captures/baseline.cfile
   ```
-- OR an RTL-SDR live source.
 
-## Open `gnuradio-companion` and build
+## Variables
 
-### Block 1: File Source  (or RTL-SDR Source for live)
+| ID           | Value                         | Notes                                        |
+|--------------|-------------------------------|----------------------------------------------|
+| `rf_freq`    | `915e6`                       | `433.92e6` for an EU build                   |
+| `lo_offset`  | `200e3`                       | SDR is tuned this far below `rf_freq`        |
+| `samp_rate`  | `2e6`                         |                                              |
+| `decim`      | `20`                          | channel rate 100 ksps                        |
+| `chan_rate`  | `samp_rate / decim`           |                                              |
+| `deviation`  | `20630`                       | the CC1101's actual deviation (DEVIATN 0x35) |
+| `bit_rate`   | `9600`                        |                                              |
 
-| Property      | Value                              |
-|---------------|------------------------------------|
-| Type          | `complex`                          |
-| File          | `captures/baseline.cfile`          |
-| Repeat        | `No`                               |
-| Vec. Length   | `1`                                |
-| ID            | `blocks_file_source_0`             |
+Add a **QT GUI Range** with ID `cfo`: default `0`, start `-30e3`, stop
+`30e3`, step `250`. It trims out the satellite's crystal offset (step 3).
 
-For live RTL-SDR replace with **RTL-SDR Source**:
-| Sample rate   | `samp_rate` (variable = 2e6)       |
-| Centre freq   | 433920000                          |
-| RF Gain       | 30                                 |
+## Blocks
 
-### Variable: `samp_rate`
-Set to **1e6** for the synthetic baseline, or **2e6** for an RTL-SDR.
+### Block 1: Source
 
-### Variable: `bit_rate`
-Set to **9600**.
+**Soapy RTLSDR Source**
 
-### Block 2: Frequency Xlating FIR Filter (live RX only)
+| Property          | Value                     |
+|-------------------|---------------------------|
+| Sample Rate       | `samp_rate`               |
+| Center Freq (Hz)  | `rf_freq - lo_offset`     |
+| AGC               | `False`                   |
+| RF Gain           | `20` (bench; raise if weak) |
 
-Centres the signal at 0 Hz baseband. Skip for the synthetic capture
-(it's already at baseband).
+or **Soapy HackRF Source**: same rate and frequency, Amp `Off`, IF Gain
+`16`, VGA Gain `16`.
 
-| Decimation    | `int(samp_rate / 200000)`          |
-| Taps          | `firdes.low_pass(1, samp_rate, 25000, 5000)` |
-| Centre Freq   | 0                                  |
-| Sample Rate   | `samp_rate`                        |
+or **File Source** for a recording: Type `complex`, Repeat `No`, File
+`captures/live.cfile`. (gr-osmosdr's osmocom Source also works: same
+rate and frequency.)
+
+### Block 2: Frequency Xlating FIR Filter
+
+Shifts the signal from `lo_offset` down to 0 Hz, low-pass filters it,
+and drops the rate to 100 ksps.
+
+| Property          | Value                                       |
+|-------------------|---------------------------------------------|
+| Type              | Complex->Complex (Complex Taps)             |
+| Decimation        | `decim`                                     |
+| Taps              | `firdes.low_pass(1, samp_rate, 40e3, 10e3)` |
+| Center Frequency  | `lo_offset + cfo`                           |
+| Sample Rate       | `samp_rate`                                 |
+
+The 40 kHz cutoff passes the about 51 kHz wide signal (plus or minus
+25 kHz) with room for 15 kHz of crystal offset. Narrow filters that suit
+a 4.8 kHz deviation cut this signal in half.
 
 ### Block 3: Quadrature Demod
 
-| Gain          | `samp_rate / (2 * pi * deviation)` (~33 for sr=1e6, dev=4800) |
+| Gain | `chan_rate / (2 * math.pi * deviation)`  (about 0.77) |
 
-This block takes complex baseband and outputs instantaneous
-frequency as float — exactly what `tools/demod_iq.quadrature_demod`
-computes.
+Output is the instantaneous frequency scaled so a full deviation is
+plus or minus 1. The alternating preamble reaches about plus or minus 0.88.
 
-### Block 4: Symbol Sync (PFB MF Resampler)
+**Set `cfo` once.** Add a **QT GUI Time Sink** (Type Float, Sample Rate
+`chan_rate`, Number of Points `2000`, Trigger Mode `Normal`, Trigger
+Level `0.5`) on this block's output and run. The preamble should swing
+evenly around 0. If it is shifted (say +0.6 / -1.1, a mean of -0.25),
+add `mean x deviation` to `cfo` (here about -5 kHz) and check again. A
+board's offset stays put to within a kHz or two, so note it and make it
+the slider's default.
 
-This is the crucial block that `demod_iq.py` lacks. It recovers
-symbol timing even with fractional samples-per-symbol and corrects
-for clock drift.
+> **Automatic alternative:** a **DC Blocker** (Length
+> `int(chan_rate * 0.02)`, Long Form `True`) after this block removes the
+> offset without tuning, but frames with long runs of 0x00 or 0xFF bytes
+> (housekeeping telemetry, some commands) then lose bits. Trimming `cfo`
+> is more reliable.
 
-| Sample rate / symbol rate | `samp_rate / bit_rate`           |
-| Loop bandwidth            | `0.045`                          |
-| Damping factor            | `1.0`                            |
-| TED gain                  | `1.0`                            |
-| Filter taps               | `firdes.root_raised_cosine(1.0, samp_rate, bit_rate, 0.35, 11*int(samp_rate/bit_rate))` |
-| Output samples / symbol   | `1`                              |
-| TED                       | `Mueller and Müller`             |
+### Block 4: Symbol Sync
 
-The output is one float per symbol — positive for bit=1, negative
-for bit=0.
+Recovers bit timing with fractional samples per symbol and tracks clock
+drift between the satellite's crystal and the SDR's.
+
+| Property                    | Value                                  |
+|-----------------------------|----------------------------------------|
+| I/O Type                    | Float                                  |
+| Timing Error Detector       | Zero Crossing                          |
+| Samples per Symbol          | `chan_rate / bit_rate`  (about 10.42)  |
+| Expected TED Gain           | `1.0`                                  |
+| Loop Bandwidth              | `0.02`                                 |
+| Damping Factor              | `1.0`                                  |
+| Maximum Deviation           | `1.5`                                  |
+| Output Samples/Symbol       | `1`                                    |
+| Interpolating Resampler     | MMSE, 8 tap FIR                        |
+| TED Slicer Constellation    | `digital.constellation_bpsk().base()`  |
+
+Output is one float per bit: positive for 1, negative for 0.
 
 ### Block 5: Binary Slicer
 
-No parameters. Maps positive floats → 1, negative → 0.
+No parameters. Positive becomes 1, negative becomes 0.
 
-### Block 6: Correlate Access Code
+### Block 6: Correlate Access Code - Tag Stream
 
-Finds the sync word at the bit level.
+The CC1101 sends the sync word twice, so match all 32 bits, as the
+receiving CC1101 does.
 
-| Access Code   | `1101001110010001`   (= 0xD391, MSB-first)         |
-| Threshold     | `2`   (Hamming distance tolerance for sync match)  |
-| Tag Name      | `corr_est`                                         |
+| Property      | Value                                         |
+|---------------|-----------------------------------------------|
+| IO Type       | Byte                                          |
+| Access Code   | `11010011100100011101001110010001` (D391 D391) |
+| Threshold     | `3`  (bits allowed wrong)                      |
+| Tag Name      | `sync`                                        |
 
-### Block 7: Tagged Stream Align  +  Packet Deframer
+### Block 7: Embedded Python Block (deframer)
 
-Once the sync is found you need a length-prefix frame deframer. GNU
-Radio doesn't ship a clean one for variable-length packets; the
-common workaround is an **Embedded Python Block** that reads:
+Add an **Embedded Python Block**, open its code in the editor, replace
+the template with the contents of
+[`semaeopus_deframer.py`](semaeopus_deframer.py), and save. Set its
+parameters:
 
-```python
-import pmt
-import numpy as np
-from gnuradio import gr
+| Tag Name   | `'sync'`                                    |
+| Radio Crc  | `True` (live or recorded hardware)          |
+| Jsonl      | `''`, or a path such as `'gr_frames.jsonl'` |
 
-class semaeopus_deframer(gr.sync_block):
-    def __init__(self):
-        gr.sync_block.__init__(self,
-            name='semaeopus_deframer',
-            in_sig=[np.uint8], out_sig=None)
-        self.tag_key = pmt.intern('corr_est')
+It reads the length byte, collects the frame, checks the CCSDS CRC and
+the CC1101's own CRC, and prints:
 
-    def work(self, input_items, output_items):
-        in0 = input_items[0]
-        tags = self.get_tags_in_window(0, 0, len(in0))
-        for tag in tags:
-            offset = tag.offset - self.nitems_read(0)
-            # Skip past the 16-bit sync
-            start = offset + 16
-            if start + 8 > len(in0): continue
-            length = int(''.join(str(b) for b in in0[start:start+8]), 2)
-            need = start + 8 + length * 8
-            if need > len(in0): continue
-            payload = bytearray()
-            for k in range(0, length * 8, 8):
-                b = 0
-                for j in range(8):
-                    b = (b << 1) | int(in0[start + 8 + k + j])
-                payload.append(b)
-            print(f"frame len={length}: {bytes(payload).hex()}")
-        return len(in0)
+```
+frame apid=0x001 seq=12 len=34 ccsds-crc=ok radio-crc=ok : 220001c00c0019...
 ```
 
-### Block 8: Verify against the oracle
+The `frames` message port carries each frame as a PDU if you want to
+wire it to a **Message Debug** or **Socket PDU** block.
 
-Run the flowgraph and confirm the recovered hex frames match
-`captures/baseline.jsonl`. Any frame that's in the oracle but not in
-your output is one your demod chain dropped — usually a
-symbol-timing problem.
+### Block 8: Verify against the wire
+
+Run the attacker modem's capture at the same time:
+
+```bash
+python -m groundstation.attacker.capture --port /dev/ttyACM1 --out cap.jsonl
+```
+
+and set the deframer's `jsonl` to `'gr_frames.jsonl'`. Both files use
+the `frame` key with the same hex (`LEN` through the CCSDS CRC), so
+every frame the CC1101 caught should appear in both. A frame the modem
+caught but GNU Radio did not is usually timing (step 4) or offset
+(step 3).
+
+## Synthetic capture settings
+
+`captures/baseline.iq` from `tools/generate_iq.py` is not what the
+hardware sends: it is already at 0 Hz, sent at 1 Msps with a 4.8 kHz
+deviation, has the sync word once and no radio CRC, and uses 104
+samples per bit (9615 bit/s). Change these and leave the rest:
+
+| Setting                    | Synthetic value                  |
+|----------------------------|----------------------------------|
+| Source                     | File Source, `captures/baseline.cfile` |
+| `samp_rate`                | `1e6`                            |
+| `lo_offset`, `cfo`         | `0`                              |
+| `decim`                    | `10`                             |
+| `deviation`                | `4800`                           |
+| `bit_rate`                 | `1e6 / 104`                      |
+| Access Code / Threshold    | `1101001110010001` / `2`         |
+| Deframer Radio Crc         | `False`                          |
+
+Expect 10 or 11 of the 11 frames in `captures/baseline.jsonl`.
 
 ## Sanity check
 
-If you skip Symbol Sync and just feed Binary Slicer's output
-straight from Quadrature Demod (with an "integrate-and-dump" via
-Decimating FIR), you get the same behaviour as `tools/demod_iq.py`:
-fine for the synthetic BT=1.0 capture, broken at BT=0.5.
+If you skip Symbol Sync and slice the Quadrature Demod output with a
+fixed integrate-and-dump (a Decimating FIR of `int(chan_rate/bit_rate)`
+ones), you get the behaviour of `tools/demod_iq.py`: fine on the
+synthetic capture, unreliable on a real CC1101, whose clock is never
+exactly 9600 bit/s.

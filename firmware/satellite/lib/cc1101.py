@@ -10,7 +10,7 @@ Implements the subset Semaeopus needs:
 
 Not a full driver. Refer to TI DN005 / DN509 for the magic register
 values. The defaults below were exported from TI's SmartRF Studio for
-9600 bps 2-GFSK with a 58 kHz IF and 4.8 kHz deviation.
+9600 bps 2-GFSK with a 58 kHz receive filter and ~20.6 kHz deviation.
 """
 
 from machine import Pin, SPI
@@ -139,8 +139,11 @@ class CC1101:
 
     def configure_default(self, freq_hz, sync_word, bitrate_bps,
                           deviation_hz, rx_bw_hz, tx_power_dbm=0):
-        # Most registers come from SmartRF Studio export for
-        # 433.92 MHz, 9.6 kBaud, 4.8 kHz dev, 58 kHz BW, 2-GFSK.
+        # Most registers come from a SmartRF Studio export: 9.6 kBaud,
+        # 58 kHz BW, 2-GFSK. On-air format, which SDR tools must match
+        # (see tools/air_frame.py): 4 preamble bytes, the sync word sent
+        # twice, LEN + data, then a CRC-16 (poly 0x8005) added by the chip.
+        # The deviation_hz argument is not used: DEVIATN is fixed below.
         self._write_reg(IOCFG0,  0x06)   # GDO0: asserts on sync, deasserts at packet end
         self._write_reg(IOCFG2,  0x29)   # GDO2: CHIP_RDYn (unused)
         self._write_reg(FIFOTHR, 0x47)
@@ -150,10 +153,10 @@ class CC1101:
         self._write_reg(FSCTRL1, 0x06)
         self._write_reg(MDMCFG4, 0xF8)   # CHANBW=58 kHz, DRATE_E=8
         self._write_reg(MDMCFG3, 0x83)   # DRATE_M=131  ->  ~9.6 kBaud
-        self._write_reg(MDMCFG2, 0x13)   # 2-GFSK, sync 16/16, no Manchester
-        self._write_reg(MDMCFG1, 0x22)
+        self._write_reg(MDMCFG2, 0x13)   # 2-GFSK, sync 30/32 (sync word sent twice), no Manchester
+        self._write_reg(MDMCFG1, 0x22)   # 4 preamble bytes
         self._write_reg(MDMCFG0, 0xF8)
-        self._write_reg(DEVIATN, 0x35)   # ~4.8 kHz
+        self._write_reg(DEVIATN, 0x35)   # 26 MHz / 2^17 * 13 * 8 = ~20.6 kHz
         self._write_reg(MCSM1,   0x30)   # CCA, then IDLE after TX/RX
         self._write_reg(MCSM0,   0x18)   # auto-cal from IDLE to RX/TX
         self._write_reg(FOCCFG,  0x16)

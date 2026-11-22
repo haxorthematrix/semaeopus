@@ -120,13 +120,13 @@ CC1101's capabilities and a strong match to flight-typical link parameters.
 |------------------|--------------------|
 | Modulation       | 2-GFSK             |
 | Bit rate         | 9600 bps           |
-| Deviation        | 4.8 kHz            |
+| Deviation        | ~20.6 kHz (DEVIATN 0x35) |
 | RX bandwidth     | 58 kHz             |
 | Preamble         | 32 bits (0xAA × 4) |
-| Sync word        | 0xD391 (configurable per lesson) |
-| Whitening        | PN9, on            |
+| Sync word        | 0xD391, sent twice (30/32 sync mode; configurable per lesson) |
+| Whitening        | off                |
 | FEC              | none (lesson 0)  → Reed-Solomon (255,223) in lesson 7 |
-| CRC              | CRC-16-CCITT      |
+| CRC              | CRC-16-CCITT in the frame, plus the CC1101's CRC-16 (poly 0x8005) on air |
 | Packet format    | Variable length, length byte first |
 
 ### 3.3 Antennas
