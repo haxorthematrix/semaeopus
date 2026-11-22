@@ -16,7 +16,7 @@ By the end of this lesson you have:
 **CYD build (recommended):** follow `hardware/cyd-build.md` (two CYDs:
 satellite and ground station). **Pico build:** follow
 `hardware/wiring-satellite.md` and `hardware/wiring-ground-station.md`.
-Use 915 MHz antennas (82 mm wire) and keep the boards 1–3 m apart on
+Use 915 MHz antennas (82 mm wire) and keep the boards 1 to 3 m apart on
 the bench.
 
 ### 2. Flash MicroPython

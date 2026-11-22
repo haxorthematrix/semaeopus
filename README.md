@@ -41,7 +41,7 @@ Semaeopus reproduces the **TT&C link** (telemetry, tracking & command)
 of a modern CubeSat closely enough that the lessons transfer to real
 spacecraft work. The on-air protocol is a deliberately simplified
 [CCSDS Space Packet] layered on a 2-GFSK CC1101 PHY at **915 MHz (US,
-default)** or **433.92 MHz (EU)** — same shape of stack flown today by
+default)** or **433.92 MHz (EU)**, same shape of stack flown today by
 small-sat operators, with off-the-shelf boards and modules in place of
 the flight integration.
 
@@ -178,7 +178,7 @@ no SMD soldering. Prices are USD, late 2025 retail.
 > URLs, key specs to match, and substitution guidance for when an
 > ASIN goes stale.
 
-### CYD build (recommended) — ~ $30 per node
+### CYD build (recommended), ~ $30 per node
 
 The satellite and the operator ground station are the same hardware:
 an ESP32-2432S028R "Cheap Yellow Display" with a CC1101 reached through
@@ -187,17 +187,17 @@ its microSD slot. Full build, wiring and flashing guide:
 
 | # | Part                                                  | Role                               | Qty per node | Approx $ |
 |---|-------------------------------------------------------|------------------------------------|-----|---------:|
-| 1 | ESP32-2432S028R "Cheap Yellow Display" (CYD)          | OBC / modem + 2.8″ screen          | 1   | 12–18    |
-| 2 | CC1101 **868/915 MHz** module (E07-900M10S or similar) | UHF transceiver                    | 1   | 3–8      |
-| 3 | microSD sniffer / breakout that plugs into a SD slot  | Breaks the CYD's SPI bus out to 0.1″ | 1 | 3–6      |
+| 1 | ESP32-2432S028R "Cheap Yellow Display" (CYD)          | OBC / modem + 2.8″ screen          | 1   | 12-18    |
+| 2 | CC1101 **868/915 MHz** module (E07-900M10S or similar) | UHF transceiver                    | 1   | 3-8      |
+| 3 | microSD sniffer / breakout that plugs into a SD slot  | Breaks the CYD's SPI bus out to 0.1″ | 1 | 3-6      |
 | 4 | JST 1.25 mm 4-pin pigtail (CN1 header)                | 3.3 V, GND and GDO0                | 1   | <1       |
 | 5 | Dupont jumpers (F-F)                                  | Wiring                             | 7   | <1       |
-| 6 | 915 MHz SMA antenna, or 82 mm of 22 AWG wire          | Antenna                            | 1   | 0–5      |
+| 6 | 915 MHz SMA antenna, or 82 mm of 22 AWG wire          | Antenna                            | 1   | 0-5      |
 
 The attacker station is a Pi Pico + 915 MHz CC1101 USB modem (below) plus
 a HackRF for spectrum work and jamming.
 
-### Pico breadboard build: satellite (FlatSat) — ~ $35
+### Pico breadboard build: satellite (FlatSat), ~ $35
 
 | #  | Part                                       | Role                                | Qty | Approx $ |
 |----|--------------------------------------------|-------------------------------------|-----|---------:|
@@ -215,7 +215,7 @@ a HackRF for spectrum work and jamming.
 | 12 | 22 AWG solid wire, 17 cm (433 MHz)         | ¼-wave whip antenna                 | 1   | <1       |
 | 13 | USB cable (matches Pico variant)           | Power + serial console              | 1   | 2–4      |
 
-### Pico operator ground station (alternative to a CYD) — ~ $20 (+ laptop)
+### Pico operator ground station (alternative to a CYD), ~ $20 (+ laptop)
 
 | # | Part                                | Role                              | Qty | Approx $ |
 |---|-------------------------------------|-----------------------------------|-----|---------:|
@@ -268,8 +268,8 @@ Detailed substitution notes in
 | MISO (SO)  | microSD sniffer DAT0  | 19         |                                         |
 | CSN        | microSD sniffer CD/DAT3 | 5        |                                         |
 | GDO0       | CN1 IO27              | 27         | Check CN1's order on your board's silk  |
-| VCC        | CN1 3.3V              | —          | **3.3 V only.**                         |
-| GND        | CN1 GND               | —          |                                         |
+| VCC        | CN1 3.3V              | -          | **3.3 V only.**                         |
+| GND        | CN1 GND               | -          |                                         |
 
 Leave the sniffer's own card socket empty. Full pin map, including every
 on-board peripheral: [`firmware/shared/cyd_pins.py`](firmware/shared/cyd_pins.py).
@@ -348,7 +348,7 @@ typically needed. If you see flaky reads, add 4.7 kΩ from each line to
 Use a CC1101 module matched for the band you run; 433 MHz modules
 perform poorly at 915 MHz.
 
-Keep antennas vertical and the boards 1–3 m apart on the bench. Closer
+Keep antennas vertical and the boards 1-3 m apart on the bench. Closer
 than about 30 cm saturates the receivers (RSSI near -20 dBm).
 
 ### ASCII breadboard
@@ -516,7 +516,7 @@ check on failure.
 ```bash
 tools/deploy.sh pico-satellite /dev/ttyACM0
 
-# Operator's Pico — the GS front-end modem
+# Operator's Pico, the GS front-end modem
 tools/deploy.sh pico-modem     /dev/ttyACM1
 ```
 
@@ -671,7 +671,7 @@ lessons/                  ← L00 – L12 curriculum
 ## Safety, legality & ethics
 
 1. **Bench operation only.** The default, 915 MHz at 0 dBm, is a
-   low-power device under US 47 CFR 15.249. It won't reach orbit — but
+   low-power device under US 47 CFR 15.249. It won't reach orbit, but
    it will reach a neighbour with an SDR. For EU/R1 use 433.920 MHz:
    set `RF_FREQ_HZ = 433_920_000` in the satellite's `config.py` and pass
    `--freq 433920000` to the laptop tools.
@@ -708,14 +708,14 @@ terms — re-publish improvements under CC-BY-SA so others benefit.
 
 ## Status & contributing
 
-Current state: **v0.3 — CYD hardware build running.**
+Current state: **v0.3, CYD hardware build running.**
 
 - All 13 lessons written and runnable in the simulator.
 - 48 tests passing, including the board firmware on simulated hardware.
 - Validated on physical hardware at 915 MHz: CYD satellite beaconing and
   telemetry, CYD ground station reception, operator ping/pong, and the
-  attacker Pico's capture, replay and injection (lessons L05–L06).
-- Not yet exercised on hardware: security levels L1–L3, the L10 jamming
+  attacker Pico's capture, replay and injection (lessons L05-L06).
+- Not yet exercised on hardware: security levels L1-L3, the L10 jamming
   lab, and the Pico breadboard satellite.
 
 Issues, PRs, and lesson contributions welcome at

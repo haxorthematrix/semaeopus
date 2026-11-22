@@ -43,8 +43,8 @@ ASCII, newline-terminated.
 |----------------------------------------|-------------------------------------------------|
 | `PING`                                 | Returns `PONG <ticks_ms>`                       |
 | `TX <hex>`                             | Transmit a complete frame (LEN byte first, max 62 bytes) |
-| `CFG <freq_hz> <sync_hex> <bitrate>`   | Retune (902–928 MHz or 433.05–434.79 MHz); bit rate stays 9600 |
-| `BW <hz>`                              | Receive filter bandwidth, 58–812 kHz (lesson L10) |
+| `CFG <freq_hz> <sync_hex> <bitrate>`   | Retune (902 to 928 MHz or 433.05 to 434.79 MHz); bit rate stays 9600 |
+| `BW <hz>`                              | Receive filter bandwidth, 58 to 812 kHz (lesson L10) |
 | `PWR <dbm>`                            | Transmit power, -30 to +10 dBm                  |
 
 | Modem → host                                             | Meaning            |

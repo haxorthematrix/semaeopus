@@ -39,8 +39,8 @@ A HackRF One covers the spectrum and jamming lessons.
 | MISO (SO)  | microSD sniffer DAT0    | 19         |
 | CSN        | microSD sniffer CD/DAT3 | 5          |
 | GDO0       | CN1 IO27                | 27         |
-| VCC        | CN1 3.3V                | —          |
-| GND        | CN1 GND                 | —          |
+| VCC        | CN1 3.3V                | -          |
+| GND        | CN1 GND                 | -          |
 
 * **3.3 V only.** Never connect the CC1101 to 5 V.
 * **Leave the sniffer's own microSD socket empty.** A card in it shares
