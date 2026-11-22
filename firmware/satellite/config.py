@@ -11,8 +11,8 @@ CALLSIGN        = "SEMAEOPUS-1"
 # Radio
 # ---------------------------------------------------------------------------
 
-# Frequency in Hz. 433.920 MHz (EU/R1 default), 915.000 MHz (US Part 15.247).
-RF_FREQ_HZ      = 433_920_000
+# Frequency in Hz. 915.000 MHz (US, 47 CFR 15.249) by default; 433.920 MHz for EU/R1.
+RF_FREQ_HZ      = 915_000_000
 
 RF_BITRATE_BPS  = 9600
 RF_DEVIATION_HZ = 4800
@@ -24,7 +24,7 @@ RF_TX_POWER_DBM = 0       # 0 dBm = 1 mW. CC1101 can go to +10 dBm. Stay legal.
 # CC1101 wiring (see hardware/wiring-satellite.md)
 PIN_SPI_SCK   = 18
 PIN_SPI_MOSI  = 19
-PIN_SPI_MISO  = 12
+PIN_SPI_MISO  = 16      # SPI0 MISO must be GP0, GP4 or GP16 (GP12 is SPI1)
 PIN_CC1101_CS = 13
 PIN_CC1101_GDO0 = 10
 
@@ -33,7 +33,7 @@ I2C0_SDA, I2C0_SCL = 4, 5
 I2C1_SDA, I2C1_SCL = 20, 21
 
 # LEDs (active high)
-PIN_LED_RX = 16
+PIN_LED_RX = 14          # moved from GP16, which MISO now uses
 PIN_LED_TX = 17
 
 # ---------------------------------------------------------------------------

@@ -43,7 +43,8 @@ def main():
     ap.add_argument("--count", type=int, default=1,
                     help="how many times to retransmit")
     ap.add_argument("--delay", type=float, default=0.5)
-    ap.add_argument("--freq", type=int, default=433_920_000)
+    ap.add_argument("--freq", type=int, default=915_000_000,
+                    help="Hz; 915000000 (US, default) or 433920000 (EU)")
     ap.add_argument("--sync", default="d391")
     ap.add_argument("--bitrate", type=int, default=9600)
     args = ap.parse_args()

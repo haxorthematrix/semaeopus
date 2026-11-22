@@ -35,3 +35,17 @@ the end-to-end check that proves both halves of the link work together.
 See [`hardware/bringup-checks.md`](../hardware/bringup-checks.md) for
 the troubleshooting tree — each FAIL message in the scripts is keyed
 to a row in that doc.
+
+## CYD build
+
+The CYD satellite and ground station use their own radio bring-up test,
+[`cyd/06_cc1101_cyd.py`](cyd/06_cc1101_cyd.py), which checks power,
+chip select, MISO, SCK, MOSI and GDO0 one stage at a time, then locks
+onto 915 MHz and shows a live signal meter:
+
+```bash
+tools/deploy.sh bringup-cyd /dev/cu.usbserial-XXXX
+```
+
+See [`cyd/README.md`](cyd/README.md) and
+[`../hardware/cyd-build.md`](../hardware/cyd-build.md).

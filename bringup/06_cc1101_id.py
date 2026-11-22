@@ -16,7 +16,7 @@ from machine import Pin, SPI
 import time
 
 
-PIN_SCK, PIN_MOSI, PIN_MISO = 18, 19, 12
+PIN_SCK, PIN_MOSI, PIN_MISO = 18, 19, 16   # SPI0 cannot use GP12
 PIN_CS = 13
 
 # Strobe + register helpers (subset of firmware/satellite/lib/cc1101.py)
@@ -59,7 +59,7 @@ elif partnum == 0xFF and version == 0xFF:
     print("FAIL: all-ones from CC1101")
     print("  - check VCC=3V3 (NOT 5V — CC1101 is 3V3 only)")
     print("  - check CSN wiring to GP13")
-    print("  - check MISO wiring to GP12")
+    print("  - check MISO wiring to GP16 (pin 21)")
 elif partnum == 0x00 and version == 0x00:
     print("FAIL: all-zeros from CC1101")
     print("  - is GND connected?")

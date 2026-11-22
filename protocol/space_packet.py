@@ -120,7 +120,7 @@ def _unpack_primary(buf):
 
 # ---------------------------------------------------------------------------
 # Security helpers (HMAC-SHA256 truncated; AES via PyCryptodome on host,
-# `ucryptolib` on MicroPython)
+# `cryptolib` on MicroPython)
 # ---------------------------------------------------------------------------
 
 def hmac_sha256(key, msg):
@@ -136,18 +136,32 @@ def hmac_sha256(key, msg):
 
 
 def _aes_ctr(key, nonce8, data):
-    """AES-128-CTR. nonce8 is 8 bytes; counter is 8 bytes starting at 0."""
+    """AES-128-CTR. nonce8 is 8 bytes; counter is 8 bytes starting at 0
+    (big-endian), i.e. counter block i = nonce8 || i.
+
+    On MicroPython this builds CTR from AES-ECB (cryptolib mode 1), which
+    every port with cryptolib supports; the CTR mode (6) is a build
+    option that some firmware images leave out."""
     try:
-        # MicroPython: ucryptolib.aes mode 6 = CTR (where available)
-        import ucryptolib
-        iv = nonce8 + b"\x00" * 8
-        cipher = ucryptolib.aes(key, 6, iv)
-        return cipher.encrypt(data)
+        try:
+            import cryptolib as _cl          # MicroPython >= 1.21
+        except ImportError:
+            import ucryptolib as _cl         # older MicroPython
     except ImportError:
         from Crypto.Cipher import AES
         from Crypto.Util import Counter
         ctr = Counter.new(64, prefix=nonce8, initial_value=0)
         return AES.new(key, AES.MODE_CTR, counter=ctr).encrypt(data)
+    ecb = _cl.aes(key, 1)
+    out = bytearray(len(data))
+    for blk in range((len(data) + 15) // 16):
+        ks = ecb.encrypt(nonce8 + blk.to_bytes(8, "big"))
+        for i in range(16):
+            j = blk * 16 + i
+            if j >= len(data):
+                break
+            out[j] = data[j] ^ ks[i]
+    return bytes(out)
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +314,8 @@ def _ct_eq(a, b):
 import os as _os
 import time as _time
 
-LEAKY_HMAC_COMPARE = (_os.environ.get("SEMAEOPUS_LEAKY_HMAC", "0") == "1")
+# MicroPython's os module has no environ, so the flag is host-only.
+LEAKY_HMAC_COMPARE = (getattr(_os, "environ", {}).get("SEMAEOPUS_LEAKY_HMAC", "0") == "1")
 LEAKY_BYTE_DELAY_US = 4000   # 4 ms per matching byte — well above localhost
                              # TCP RTT noise (~0.5–2 ms typical on macOS)
 

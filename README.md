@@ -1,11 +1,12 @@
 # Semaeopus
 
-[![tests](https://img.shields.io/badge/tests-37%20passing-brightgreen)](#running-the-tests)
+[![tests](https://img.shields.io/badge/tests-48%20passing-brightgreen)](#running-the-tests)
 [![license](https://img.shields.io/badge/license-MIT%20%2F%20CC--BY--SA-blue)](LICENSE)
 [![site](https://img.shields.io/badge/site-semaeopus.net-3df97f)](https://semaeopus.net)
 
-**A realistic CubeSat hacking platform.** Build a FlatSat satellite + two
-ground stations from breadboards and Raspberry Pi Picos, *or* run the
+**A realistic CubeSat hacking platform.** Build a FlatSat satellite and
+ground station from two ESP32 "Cheap Yellow Display" boards and a Pi Pico
+attacker radio (or the original all-Pico breadboard build), *or* run the
 whole thing in a software-only simulator on your laptop. Then attack it
 across a 13-lesson curriculum that mirrors how real satellite security
 fails in the wild.
@@ -39,10 +40,10 @@ fails in the wild.
 Semaeopus reproduces the **TT&C link** (telemetry, tracking & command)
 of a modern CubeSat closely enough that the lessons transfer to real
 spacecraft work. The on-air protocol is a deliberately simplified
-[CCSDS Space Packet] layered on a 2-GFSK CC1101 PHY at **ISM 433.92 MHz
-(EU)** or **915 MHz (US)** — same shape of stack flown today by
-small-sat operators, with through-hole modules wired on a breadboard
-in place of the flight integration.
+[CCSDS Space Packet] layered on a 2-GFSK CC1101 PHY at **915 MHz (US,
+default)** or **433.92 MHz (EU)**, same shape of stack flown today by
+small-sat operators, with off-the-shelf boards and modules in place of
+the flight integration.
 
 [CCSDS Space Packet]: https://public.ccsds.org/Pubs/133x0b2.pdf
 
@@ -56,8 +57,9 @@ each in turn:
 | L2    | HMAC over `nonce ‖ body` | none            | strict monotonic nonce      | eavesdrop, denial-of-service |
 | L3    | + AES-128-CTR            | yes             | strict monotonic nonce      | DoS, side-channel        |
 
-Toggle by changing one constant in `firmware/satellite/config.py` (or
-passing `--security N` to the simulator). The curriculum walks you
+Toggle by changing `SECURITY_LEVEL` in the satellite's `config.py`
+(`firmware/cyd_satellite/` or `firmware/satellite/`), or pass
+`--security N` to the simulator. The curriculum walks you
 through breaking each level.
 
 This is **education**: the goal is for you to leave knowing how real
@@ -72,7 +74,7 @@ else's spacecraft. See [Safety, legality & ethics](#safety-legality--ethics).
 |------|-------------------|----------------------|----------------------------------|
 | **A. Simulator**       | none — just Python    | ~ 1 minute    | Lessons L04–L12. Replay & inject. End-to-end protocol attacks. |
 | **B. Synthetic RF**    | none (+ optional SDR) | ~ 5 minutes   | Lessons L01–L04 via a pre-rendered `.cu8` IQ file. Build a GFSK demodulator. |
-| **C. Real hardware**   | ~ $35 in parts        | ~ 2 hours     | Everything, including L09's timing side-channel against real silicon and L10's RF jamming with a HackRF. |
+| **C. Real hardware**   | ~ $30 per CYD node    | ~ 2 hours     | Everything, including L09's timing side-channel against real silicon and L10's RF jamming with a HackRF. |
 
 You can run paths A and B with zero hardware **today**. Path C is the
 full bench-build using the BOM below.
@@ -125,10 +127,10 @@ For the full hardware build, jump to
    │  ┌──────────────────┐                       ┌─────────────────────┐   │
    │  │ "SATELLITE"      │                       │ OPERATOR GROUND     │   │
    │  │ (FlatSat)        │                       │ STATION             │   │
-   │  │                  │   <── 433/915 MHz ──> │                     │   │
-   │  │ Pi Pico + CC1101 │       ISM downlink    │ Pi Pico + CC1101    │   │
-   │  │ + housekeeping   │       ISM uplink      │  ↕ USB-serial       │   │
-   │  │ sensors + OLED   │                       │ Laptop: gs / TUI    │   │
+   │  │                  │   <── 915/433 MHz ──> │                     │   │
+   │  │ CYD + CC1101     │       ISM downlink    │ CYD + CC1101        │   │
+   │  │ (or Pico + I²C   │       ISM uplink      │  ↕ USB-serial       │   │
+   │  │  sensors + OLED) │                       │ Laptop: gs / TUI    │   │
    │  └──────────────────┘                       └─────────────────────┘   │
    │           ▲                                                           │
    │           │                                  ┌─────────────────────┐  │
@@ -144,19 +146,20 @@ For the full hardware build, jump to
    └───────────────────────────────────────────────────────────────────────┘
 ```
 
-In the **simulator**, replace all three "Pi Pico + CC1101" boxes with
+In the **simulator**, replace all three radio boxes with
 Python processes joined to a UDP multicast group. The protocol layer,
 firmware modules, and ground-station code are identical across the two
 paths.
 
 | Subsystem        | Real CubeSat                  | Semaeopus analogue                |
 |------------------|-------------------------------|-----------------------------------|
-| OBC              | STM32, SAMD, MSP430           | Raspberry Pi Pico (RP2040)        |
-| UHF Comms        | NanoCom AX100, EnduroSat UHF  | CC1101 @ 433 / 915 MHz            |
-| EPS (power)      | GomSpace NanoPower P31u       | INA219 reading a "battery" rail   |
-| ADCS (attitude)  | Star tracker + IMU + wheels   | MPU6050 IMU                       |
-| Thermal HK       | Multiple PT1000 / thermistors | BME280 (T / P / RH)               |
-| RTC / time       | Chip-scale atomic clock       | DS3231                            |
+| OBC              | STM32, SAMD, MSP430           | ESP32 on the CYD (Pico build: RP2040) |
+| UHF Comms        | NanoCom AX100, EnduroSat UHF  | CC1101 @ 915 / 433 MHz            |
+| EPS (power)      | GomSpace NanoPower P31u       | CYD light sensor as the solar input (Pico build: INA219) |
+| ADCS (attitude)  | Star tracker + IMU + wheels   | Simulated IMU; BOOT button tumbles it (Pico build: MPU6050) |
+| Thermal HK       | Multiple PT1000 / thermistors | Simulated drift (Pico build: BME280) |
+| RTC / time       | Chip-scale atomic clock       | Software RTC (Pico build: DS3231) |
+| Status display   | Ground-side telemetry view    | CYD 2.8″ screen: mode, power, last commands |
 | Telemetry beacon | Periodic AX.25 / CCSDS frame  | CCSDS-lite beacon every 10 s      |
 | Payload          | Camera, science instrument    | "Camera" simulated — returns JPEG header |
 
@@ -175,7 +178,26 @@ no SMD soldering. Prices are USD, late 2025 retail.
 > URLs, key specs to match, and substitution guidance for when an
 > ASIN goes stale.
 
-### Satellite (FlatSat) — ~ $35
+### CYD build (recommended), ~ $30 per node
+
+The satellite and the operator ground station are the same hardware:
+an ESP32-2432S028R "Cheap Yellow Display" with a CC1101 reached through
+its microSD slot. Full build, wiring and flashing guide:
+[`hardware/cyd-build.md`](hardware/cyd-build.md).
+
+| # | Part                                                  | Role                               | Qty per node | Approx $ |
+|---|-------------------------------------------------------|------------------------------------|-----|---------:|
+| 1 | ESP32-2432S028R "Cheap Yellow Display" (CYD)          | OBC / modem + 2.8″ screen          | 1   | 12-18    |
+| 2 | CC1101 **868/915 MHz** module (E07-900M10S or similar) | UHF transceiver                    | 1   | 3-8      |
+| 3 | microSD sniffer / breakout that plugs into a SD slot  | Breaks the CYD's SPI bus out to 0.1″ | 1 | 3-6      |
+| 4 | JST 1.25 mm 4-pin pigtail (CN1 header)                | 3.3 V, GND and GDO0                | 1   | <1       |
+| 5 | Dupont jumpers (F-F)                                  | Wiring                             | 7   | <1       |
+| 6 | 915 MHz SMA antenna, or 82 mm of 22 AWG wire          | Antenna                            | 1   | 0-5      |
+
+The attacker station is a Pi Pico + 915 MHz CC1101 USB modem (below) plus
+a HackRF for spectrum work and jamming.
+
+### Pico breadboard build: satellite (FlatSat), ~ $35
 
 | #  | Part                                       | Role                                | Qty | Approx $ |
 |----|--------------------------------------------|-------------------------------------|-----|---------:|
@@ -193,7 +215,7 @@ no SMD soldering. Prices are USD, late 2025 retail.
 | 12 | 22 AWG solid wire, 17 cm (433 MHz)         | ¼-wave whip antenna                 | 1   | <1       |
 | 13 | USB cable (matches Pico variant)           | Power + serial console              | 1   | 2–4      |
 
-### Operator ground station — ~ $20 (+ laptop)
+### Pico operator ground station (alternative to a CYD), ~ $20 (+ laptop)
 
 | # | Part                                | Role                              | Qty | Approx $ |
 |---|-------------------------------------|-----------------------------------|-----|---------:|
@@ -237,9 +259,26 @@ Detailed substitution notes in
 
 ## Wiring
 
-The same Pi Pico ↔ CC1101 SPI wiring is used on **all three** of the
-boards (satellite, operator, attacker-TX). The satellite adds the
-housekeeping sensors on top.
+### CYD ↔ CC1101 (CYD satellite and ground station)
+
+| CC1101 pin | CYD source            | ESP32 GPIO | Notes                                   |
+|------------|-----------------------|------------|-----------------------------------------|
+| SCK        | microSD sniffer CLK   | 18         | VSPI bus (the display uses HSPI)        |
+| MOSI (SI)  | microSD sniffer CMD   | 23         |                                         |
+| MISO (SO)  | microSD sniffer DAT0  | 19         |                                         |
+| CSN        | microSD sniffer CD/DAT3 | 5        |                                         |
+| GDO0       | CN1 IO27              | 27         | Check CN1's order on your board's silk  |
+| VCC        | CN1 3.3V              | -          | **3.3 V only.**                         |
+| GND        | CN1 GND               | -          |                                         |
+
+Leave the sniffer's own card socket empty. Full pin map, including every
+on-board peripheral: [`firmware/shared/cyd_pins.py`](firmware/shared/cyd_pins.py).
+
+### Pi Pico ↔ CC1101 (attacker modem, and the Pico breadboard build)
+
+The same Pi Pico ↔ CC1101 SPI wiring is used on every Pico board
+(attacker modem, and the Pico satellite / operator if you build those).
+The Pico satellite adds the housekeeping sensors on top.
 
 ### Pi Pico pin map (satellite — all parts)
 
@@ -252,10 +291,10 @@ housekeeping sensors on top.
    SDA0 ◀── GP4   │ 6               36│ 3V3 OUT  ──▶ to all 3V3 rails
    SCL0 ◀── GP5   │ 7               35│ ADC_VREF
               GND │ 8               33│ GND
-   MISO ◀── GP12  │16               25│ GP19  ─▶ MOSI    (CC1101 SI)
+              GP12│16               25│ GP19  ─▶ MOSI    (CC1101 SI)
    CSn  ◀── GP13  │17               24│ GP18  ─▶ SCK     (CC1101 SCK)
-              GP14│19               22│ GP17  ─▶ TX-LED
-              GP15│20               21│ GP16  ─▶ RX-LED
+ RX-LED ◀── GP14  │19               22│ GP17  ─▶ TX-LED
+              GP15│20               21│ GP16  ◀─ MISO    (CC1101 SO)
    GDO0  ◀── GP10 │14               26│ GP20  ─▶ SDA1   (DS3231 only)
                                     27│ GP21  ─▶ SCL1   (DS3231 only)
                   └───────────────────┘
@@ -270,7 +309,7 @@ housekeeping sensors on top.
 | CSN        | GP13            | SPI chip-select                          |
 | SCK        | GP18            | SPI clock                                |
 | MOSI       | GP19            | SPI MOSI                                 |
-| MISO       | GP12            | SPI MISO                                 |
+| MISO       | GP16 (pin 21)   | SPI0 MISO (GP12 is not an SPI0 pin)      |
 | GDO0       | GP10            | Packet-end interrupt                     |
 | GDO2       | (unused)        | Leave floating                           |
 
@@ -297,17 +336,20 @@ typically needed. If you see flaky reads, add 4.7 kΩ from each line to
 ### LEDs
 
 ```
-   GP16 (RX) ── 220 Ω ──[GRN LED]── GND   (active high)
+   GP14 (RX) ── 220 Ω ──[GRN LED]── GND   (active high)
    GP17 (TX) ── 220 Ω ──[RED LED]── GND   (active high)
 ```
 
 ### Antenna
 
-- **433.92 MHz** (EU/R1 default): 22 AWG solid wire, **170 mm** long, soldered or screwed onto the CC1101's ANT pad.
-- **915 MHz** (US Part 15.247): same wire, **82 mm** long.
+- **915 MHz** (US, default): 22 AWG solid wire, **82 mm** long, or a 915 MHz SMA antenna.
+- **433.92 MHz** (EU/R1): same wire, **170 mm** long.
 
-Keep antennas vertical, ≥ 30 cm apart on the bench (closer
-front-end-saturates the receiver).
+Use a CC1101 module matched for the band you run; 433 MHz modules
+perform poorly at 915 MHz.
+
+Keep antennas vertical and the boards 1-3 m apart on the bench. Closer
+than about 30 cm saturates the receivers (RSSI near -20 dBm).
 
 ### ASCII breadboard
 
@@ -360,7 +402,7 @@ Debian/Ubuntu: `sudo apt install gnuradio gr-satellites rtl-sdr hackrf gqrx-sdr 
 
 | Package            | Why                                              |
 |--------------------|--------------------------------------------------|
-| `pycryptodome`     | AES-128-CTR on CPython (MicroPython uses built-in `ucryptolib`) |
+| `pycryptodome`     | AES-128-CTR on CPython (MicroPython builds it from built-in `cryptolib` AES) |
 
 ```bash
 pip install pycryptodome
@@ -370,14 +412,16 @@ pip install pycryptodome
 
 | Package            | Why                                              |
 |--------------------|--------------------------------------------------|
-| `mpremote`         | Upload code to the Pi Pico over USB              |
+| `mpremote`         | Copy firmware to the boards (`tools/deploy.sh`)  |
+| `esptool`          | Flash MicroPython onto the CYDs                  |
 
 ```bash
-pip install mpremote
+python3 -m pip install mpremote esptool
 ```
 
-Plus a MicroPython UF2 file flashed to each Pico — see
-[`hardware/install-os.md`](hardware/install-os.md).
+Plus MicroPython on each board: `ESP32_GENERIC` for the CYDs (see
+[`hardware/cyd-build.md`](hardware/cyd-build.md)) and the RP2040 `.uf2`
+for each Pico (see [`hardware/install-os.md`](hardware/install-os.md)).
 
 ---
 
@@ -390,7 +434,7 @@ git clone https://github.com/haxorthematrix/semaeopus
 cd semaeopus
 pip install pyserial pytest
 
-python -m pytest tests/ -q          # expect: 37 passed, 1 skipped
+python -m pytest tests/ -q          # expect: all pass (a few skip without pycryptodome / textual / mpy-cross)
 python -m sim.virtual_satellite     # leave running in one terminal
 ```
 
@@ -418,6 +462,27 @@ Open `captures/baseline.iq` in `gqrx` (File → I/Q file, type "Raw I/Q",
 sample rate 1 Msps). Lesson L02 walks the GNU Radio Companion build.
 
 ### C. Real hardware
+
+#### CYD build (recommended)
+
+Full step-by-step guide to the parts, wiring and flashing:
+[`hardware/cyd-build.md`](hardware/cyd-build.md). In short:
+
+```bash
+# 1. Flash MicroPython (ESP32_GENERIC) onto each CYD with esptool, and the .uf2 onto the Pico
+# 2. Check each radio
+tools/deploy.sh bringup-cyd  /dev/cu.usbserial-XXXX
+tools/deploy.sh bringup-pico /dev/cu.usbmodemXXXX
+# 3. Deploy
+tools/deploy.sh cyd-satellite /dev/cu.usbserial-AAAA
+tools/deploy.sh cyd-ground    /dev/cu.usbserial-BBBB
+tools/deploy.sh pico-modem    /dev/cu.usbmodemCCCC
+# 4. Operate and attack
+python -m groundstation.operator.gs --port /dev/cu.usbserial-BBBB
+python -m groundstation.attacker.capture --port /dev/cu.usbmodemCCCC --out cap.jsonl
+```
+
+#### Pico breadboard build
 
 #### 1. Flash MicroPython to each Pico
 
@@ -449,12 +514,10 @@ check on failure.
 #### 3. Deploy the full firmware
 
 ```bash
-mpremote connect /dev/ttyACM0 cp -r firmware/satellite/. :/
-mpremote connect /dev/ttyACM0 cp -r protocol :/protocol
+tools/deploy.sh pico-satellite /dev/ttyACM0
 
-# Operator's Pico — uses the GS front-end firmware
-mpremote connect /dev/ttyACM1 cp -r firmware/gs_frontend/. :/
-mpremote connect /dev/ttyACM1 cp firmware/satellite/lib/cc1101.py :/lib/cc1101.py
+# Operator's Pico, the GS front-end modem
+tools/deploy.sh pico-modem     /dev/ttyACM1
 ```
 
 Reset both Picos. Within ~ 10 s the satellite emits its first beacon.
@@ -475,7 +538,8 @@ curriculum works identically.
 
 ```bash
 python -m pytest tests/ -q
-# expect: 37 passed, 1 skipped in ~23 s
+# expect: 48 passed in ~25 s (L3 / TUI / MicroPython-compile tests skip
+# without pycryptodome / textual / mpy-cross)
 ```
 
 Coverage:
@@ -487,9 +551,13 @@ Coverage:
 | `test_sim_e2e.py`        | Spawns the virtual satellite as a subprocess and asserts an injected `FORCE_SAFE` actually flips the satellite into SAFE mode |
 | `test_iq.py`             | GFSK modulator self-check; regenerates `captures/baseline.iq` if missing |
 | `test_tui_smoke.py`      | Operator TUI imports cleanly and `OperatorState` produces monotonic nonces |
+| `firmware/test_cyd_satellite.py` | The CYD satellite firmware on a register-level simulated CC1101: telemetry, commands, L0/L2/L3, commands arriving mid-transmission |
+| `firmware/test_modems.py` | CYD ground station and Pico modem: line protocol, CFG/BW/PWR, error handling, continuous reception at real 9600 bps timing |
+| `firmware/test_display_and_build.py` | CYD screen driver output; every firmware file compiles with MicroPython's `mpy-cross` |
 
-The one skipped test is `test_l3_encrypts_and_authenticates` — it
-requires `pycryptodome`.
+The firmware tests stage each board exactly as `tools/deploy.sh` would
+and run the MicroPython code on CPython against simulated hardware
+(`tests/firmware/mpsim.py`).
 
 ---
 
@@ -539,18 +607,24 @@ hardware/                 ← hardware references
   wiring-ground-station.md
   install-os.md           ← MicroPython flash, mpremote setup
   bringup-checks.md       ← 7-stage wire-then-test sequence
+  cyd-build.md            ← CYD build: parts, wiring, flashing, first test
 
 bringup/                  ← MicroPython smoke scripts
   01_blink.py … 07_radio_loopback.py
+  cyd/                    ← CYD radio bring-up (MicroPython + Arduino)
 
 firmware/
-  satellite/              ← MicroPython OBC for the FlatSat
+  cyd_satellite/          ← CYD satellite: main, config, sensor stand-ins
+  cyd_ground/             ← CYD operator ground station (modem + screen)
+  shared/                 ← modem.py, cyd_display.py, cyd_pins.py
+  satellite/              ← MicroPython OBC for the Pico FlatSat;
+                            obc/, comms/ and lib/cc1101.py are shared by the CYD build
     config.py             ← per-build knobs (frequency, security level, keys)
     main.py               ← scheduler + handlers
     lib/                  ← CC1101 + sensor drivers
     obc/                  ← scheduler, modes, housekeeping, ADCS, EPS
     comms/                ← beacon, handlers, security wrappers
-  gs_frontend/            ← USB-CDC modem for both GS Picos
+  gs_frontend/            ← Pico USB modem (attacker, or a Pico ground station)
 
 groundstation/
   operator/
@@ -582,12 +656,13 @@ tools/
   cu8_to_cfile.py         ← .cu8 → GNU Radio .cfile
   timing_oracle.py        ← localhost oracle for L09
   timing_attack.py        ← byte-by-byte tag recovery
+  deploy.sh               ← copy firmware onto a board (CYD or Pico)
 
 captures/
   baseline.iq             ← 5 MB synthetic capture
   baseline.jsonl          ← oracle (decoded frames)
 
-tests/                    ← pytest suite
+tests/                    ← pytest suite (firmware/ runs the board code on simulated hardware)
 lessons/                  ← L00 – L12 curriculum
 ```
 
@@ -595,15 +670,15 @@ lessons/                  ← L00 – L12 curriculum
 
 ## Safety, legality & ethics
 
-1. **Bench operation only.** Default 433.920 MHz at 0 dBm with a
-   17 cm whip is well inside EU/R1 ISM limits and ~ 1/100 of US Part
-   15.247 EIRP. It won't reach orbit — but it will reach a neighbour
-   with an SDR. Switch to **915 MHz** for US compliance via
-   `RF_FREQ_HZ = 915_000_000` in `firmware/satellite/config.py`.
+1. **Bench operation only.** The default, 915 MHz at 0 dBm, is a
+   low-power device under US 47 CFR 15.249. It won't reach orbit, but
+   it will reach a neighbour with an SDR. For EU/R1 use 433.920 MHz:
+   set `RF_FREQ_HZ = 433_920_000` in the satellite's `config.py` and pass
+   `--freq 433920000` to the laptop tools.
 2. **No external power amplifiers.** A CC1101 + PA module turns
    Semaeopus into an illegal local jammer. Don't build one.
 3. **Never aim at amateur satellite frequencies** (435–438 MHz UHF).
-   CC1101 *can* tune there; Semaeopus's default 433.920 MHz is
+   CC1101 *can* tune there; the EU setting, 433.920 MHz, is
    deliberately below the amateur segment.
 4. **Practice attacks only on systems you own** or have explicit
    written permission to test. The L09 timing oracle, the L10
@@ -633,18 +708,20 @@ terms — re-publish improvements under CC-BY-SA so others benefit.
 
 ## Status & contributing
 
-Current state: **v0.2 — software-complete; hardware pending bring-up.**
+Current state: **v0.3, CYD hardware build running.**
 
 - All 13 lessons written and runnable in the simulator.
-- 37 host-side tests passing.
-- Hardware build documented in detail; not yet validated end-to-end
-  on physical parts.
+- 48 tests passing, including the board firmware on simulated hardware.
+- Validated on physical hardware at 915 MHz: CYD satellite beaconing and
+  telemetry, CYD ground station reception, operator ping/pong, and the
+  attacker Pico's capture, replay and injection (lessons L05-L06).
+- Not yet exercised on hardware: security levels L1-L3, the L10 jamming
+  lab, and the Pico breadboard satellite.
 
 Issues, PRs, and lesson contributions welcome at
 [github.com/haxorthematrix/semaeopus](https://github.com/haxorthematrix/semaeopus).
 
 If you build the hardware, please share your bring-up log and any
-register-tuning notes you discover for the CC1101 — that's the next
-biggest open item.
+register-tuning notes you discover for the CC1101.
 
 Project site: [semaeopus.net](https://semaeopus.net).

@@ -40,10 +40,10 @@ except ImportError:
 class _Cfg:
     PIN_SPI_SCK   = 18
     PIN_SPI_MOSI  = 19
-    PIN_SPI_MISO  = 12
+    PIN_SPI_MISO  = 16      # SPI0 cannot use GP12
     PIN_CC1101_CS = 13
     PIN_CC1101_GDO0 = 10
-    RF_FREQ_HZ      = 433_920_000
+    RF_FREQ_HZ      = 915_000_000
     RF_BITRATE_BPS  = 9600
     RF_DEVIATION_HZ = 4800
     RF_RX_BW_HZ     = 58_000
@@ -99,6 +99,6 @@ else:
     else:
         print("FAIL: <10 frames received in 30 s")
         print("  - confirm the OTHER Pico printed 'TX complete'")
-        print("  - same antenna length on both sides?  17 cm for 433.92 MHz")
+        print("  - same antenna length on both sides?  8.2 cm for 915 MHz (17 cm for 433.92 MHz)")
         print("  - try moving the radios 30 cm apart, NOT touching each other")
         print("  - both CC1101s on the same sync word, freq, bitrate? (this script's defaults match)")

@@ -13,29 +13,32 @@ By the end of this lesson you have:
 ## Steps
 
 ### 1. Build the hardware
-Follow `hardware/wiring-satellite.md` and `hardware/wiring-ground-station.md`.
-Power both Picos from the same laptop via USB. Antennas are the
-included 17 cm wires (433 MHz) — keep them ~30 cm apart on the bench.
+**CYD build (recommended):** follow `hardware/cyd-build.md` (two CYDs:
+satellite and ground station). **Pico build:** follow
+`hardware/wiring-satellite.md` and `hardware/wiring-ground-station.md`.
+Use 915 MHz antennas (82 mm wire) and keep the boards 1 to 3 m apart on
+the bench.
 
 ### 2. Flash MicroPython
-On both Picos: hold BOOTSEL, plug USB, drag `rp2-pico-v1.22.x.uf2`
-onto the mass-storage device that appears.
+CYDs: `ESP32_GENERIC` with esptool (see `hardware/cyd-build.md`).
+Picos: hold BOOTSEL, plug USB, drag the `RPI_PICO` `.uf2` onto the
+mass-storage device that appears.
 
 ### 3. Deploy firmware
 ```bash
-# Satellite
-mpremote connect /dev/ttyACM0 cp -r firmware/satellite/. :/
-mpremote connect /dev/ttyACM0 cp -r protocol :/protocol
+# CYD build
+tools/deploy.sh cyd-satellite  /dev/cu.usbserial-AAAA
+tools/deploy.sh cyd-ground     /dev/cu.usbserial-BBBB
 
-# Ground-station front-end (the other Pico)
-mpremote connect /dev/ttyACM1 cp -r firmware/gs_frontend/. :/
-mpremote connect /dev/ttyACM1 cp firmware/satellite/lib/cc1101.py :/lib/cc1101.py
+# Pico build
+tools/deploy.sh pico-satellite /dev/ttyACM0
+tools/deploy.sh pico-modem     /dev/ttyACM1
 ```
 
 ### 4. Run the operator app
 ```bash
 pip install pyserial
-python -m groundstation.operator.gs --port /dev/ttyACM1
+python -m groundstation.operator.gs --port <ground station port>
 ```
 
 ### Expected outcome

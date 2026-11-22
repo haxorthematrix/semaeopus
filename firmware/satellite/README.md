@@ -4,43 +4,22 @@ MicroPython for RP2040 (Raspberry Pi Pico / Pico W / Pico 2).
 
 ## Deploy
 
+> The recommended satellite is now the CYD build in
+> [`../cyd_satellite/`](../cyd_satellite/) (see
+> [`../../hardware/cyd-build.md`](../../hardware/cyd-build.md)). It reuses
+> this directory's `obc/`, `comms/` and `lib/cc1101.py`, so changes here
+> apply to both builds.
+
 1. Flash MicroPython (≥ 1.22) to the Pico — drag a `.uf2` while holding
    BOOTSEL.
-2. Copy the contents of this directory **plus** `protocol/space_packet.py`
-   onto the Pico's filesystem. Recommended layout on the Pico:
+2. Copy the firmware, which also brings `protocol/space_packet.py` along:
 
-   ```
-   /
-   ├── main.py
-   ├── config.py
-   ├── boot_count.txt        ← created on first boot
-   ├── lib/
-   │   ├── cc1101.py
-   │   ├── ssd1306.py
-   │   ├── bme280.py
-   │   ├── mpu6050.py
-   │   ├── ina219.py
-   │   ├── ds3231.py
-   │   └── __init__.py
-   ├── obc/
-   │   └── …
-   ├── comms/
-   │   └── …
-   └── protocol/
-       ├── __init__.py
-       └── space_packet.py   ← copy of project-root protocol/space_packet.py
+   ```bash
+   tools/deploy.sh pico-satellite /dev/ttyACM0
    ```
 
-   With Thonny: open the project directory, right-click each → "Upload to
-   /". With `mpremote`:
-
-   ```
-   mpremote connect /dev/ttyACM0 cp -r firmware/satellite/. :/
-   mpremote cp protocol/space_packet.py :/protocol/space_packet.py
-   ```
-
-3. Hard-reset the Pico. The OLED should light up with the call sign and
-   beacon counter inside ~2 s; a green LED blinks every time the radio
+3. The Pico resets. The OLED should light up with the call sign and
+   beacon counter inside ~2 s; the TX LED blinks every time the radio
    transmits.
 
 ## Configuration

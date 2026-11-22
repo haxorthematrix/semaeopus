@@ -126,7 +126,7 @@ or the crystal isn't oscillating; replace the board.
 ## Stage 6 — Wire and verify SPI to the CC1101
 
 **Before plugging in the CC1101**, place a single Dupont wire between
-**GP19 (MOSI)** and **GP12 (MISO)**. Then run:
+**GP19 (MOSI)** and **GP16 (MISO)**. Then run:
 ```bash
 mpremote connect /dev/ttyACM0 run bringup/05_spi_loopback.py
 ```
@@ -144,7 +144,7 @@ Now remove that loopback jumper and wire the CC1101 per
 | CSN    | GP13           |
 | SCK    | GP18           |
 | MOSI   | GP19           |
-| MISO   | GP12           |
+| MISO   | GP16 (pin 21)  |
 | GDO0   | GP10           |
 
 > **3V3 only.** Driving the CC1101 from 5 V will destroy it.
@@ -187,7 +187,7 @@ RSSI on a bench-distance link (≥ 30 cm apart) is typically -30 to
 
 | Symptom                                        | Likely cause                                                                  |
 |------------------------------------------------|-------------------------------------------------------------------------------|
-| RX prints nothing at all                       | Antenna missing or wrong length. 17 cm for 433.92 MHz; 8.2 cm for 915 MHz.    |
+| RX prints nothing at all                       | Antenna missing or wrong length. 8.2 cm for 915 MHz; 17 cm for 433.92 MHz.    |
 | RX gets junk bytes (CRC fails)                 | Antennas too close (front-end saturating) — move them ≥ 30 cm apart           |
 | RX RSSI very low (-100+) but bytes correct     | Antenna is fine; you just have a long link. Nothing wrong.                    |
 | RX gets nothing AND `bringup/06_cc1101_id.py` PASSed | Frequency or sync word mismatch — both scripts use defaults; re-run both    |
